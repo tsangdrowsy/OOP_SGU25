@@ -30,7 +30,7 @@ public class GiangVien extends Nguoi {
     }
 
     public void setMaGV(String maGV) {
-        MaGV = maGV;
+        this.MaGV = maGV;
     }
 
     public LocalDate getNgayVaoLam() {
@@ -38,7 +38,7 @@ public class GiangVien extends Nguoi {
     }
 
     public void setNgayVaoLam(LocalDate ngayVaoLam) {
-        NgayVaoLam = ngayVaoLam;
+        this.sNgayVaoLam = ngayVaoLam;
     }
 
     public int getSNN() {
@@ -58,7 +58,7 @@ public class GiangVien extends Nguoi {
     }
 
     public void setChuyenNganh(String chuyenNganh) {
-        ChuyenNganh = chuyenNganh;
+        this.ChuyenNganh = chuyenNganh;
     }
 
     public String getPhuTrach() {
@@ -66,7 +66,7 @@ public class GiangVien extends Nguoi {
     }
 
     public void setPhuTrach(String phuTrach) {
-        PhuTrach = phuTrach;
+        this.PhuTrach = phuTrach;
     }
 
     public int getPhuCapThamNien() {
