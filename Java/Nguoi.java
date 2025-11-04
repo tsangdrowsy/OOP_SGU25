@@ -1,13 +1,13 @@
 package Java;
 
-import java.sql.Date;
+import java.time.LocalDate;
 
 public abstract class Nguoi
 {
      String CCCD, HoTen;
-     Date NgaySinh; 
+     LocalDate NgaySinh; 
 
-     public Nguoi(String CCCD, String HoTen, Date NgaySinh)
+     public Nguoi(String CCCD, String HoTen, LocalDate NgaySinh)
      {
         this.CCCD=CCCD;
         this.HoTen=HoTen;
