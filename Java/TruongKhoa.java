@@ -1,6 +1,6 @@
-package java;
+package Java;
 
-import java.local.Date
+import java.time.LocalDate;
 
 public class TruongKhoa extends GiangVien{
     private int LuongThem;
@@ -10,7 +10,7 @@ public class TruongKhoa extends GiangVien{
         double PhuCap, String ChuyenNganh, String PhuTrach,
         int PhuCapThamNien, int LuongThem)
         {
-            super(CCCD,HoTen,Ngáyinh,MaGV,NgayVaoLam,SNN,PhuCap,ChuyenNganh,PhuTrach,PhuCapThamNien);
+            super(CCCD,HoTen,NgaySinh,MaGV,NgayVaoLam,SNN,PhuCap,ChuyenNganh,PhuTrach,PhuCapThamNien);
             this.LuongThem=LuongThem;
         }
 

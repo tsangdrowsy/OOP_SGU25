@@ -37,8 +37,8 @@ public class GiangVien extends Nguoi {
         return NgayVaoLam;
     }
 
-    public void setNgayVaoLam(LocalDate ngayVaoLam) {
-        this.sNgayVaoLam = ngayVaoLam;
+    public void setNgayVaoLam(LocalDate NgayVaoLam) {
+        this.NgayVaoLam = NgayVaoLam;
     }
 
     public int getSNN() {
