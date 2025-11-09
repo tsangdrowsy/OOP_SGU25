@@ -16,7 +16,5 @@ public Dean(String name, int age, String humanid, String dateOfBirth, String sex
 @Override
 double payroll(){
 return super.payroll() + super.payroll()*0.95;
-
-
 }
 }
