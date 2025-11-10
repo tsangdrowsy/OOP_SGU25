@@ -1,6 +1,8 @@
 package ManageSchool.service;
 
 import ManageSchool.model.Student;
+import ManageSchool.model.SpecialStudent;
+import ManageSchool.model.GraduateStudent;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -11,7 +13,6 @@ public class StatisticStudent implements Statistic<Student> {
         this.data = data;
     }
 
-    // Tính học phí trung bình (theo payroll)
     @Override
     public double getAverage() {
         if (data.isEmpty()) return 0.0;
@@ -21,7 +22,6 @@ public class StatisticStudent implements Statistic<Student> {
                    .orElse(0.0);
     }
 
-    //Sinh viên có học phí cao nhất
     @Override
     public Student getTopEntity() {
         return data.stream()
@@ -29,15 +29,21 @@ public class StatisticStudent implements Statistic<Student> {
                    .orElse(null);
     }
 
-    // Đếm số sinh viên theo khoa (department)
     @Override
-    public long countByCategory(String department) {
-        return data.stream()
-                   .filter(st -> st.getDepartment().equalsIgnoreCase(department))
-                   .count();
+    public long countByCategory(String category) {
+        switch (category.toLowerCase()) {
+            case "special":
+                return data.stream().filter(s -> s instanceof SpecialStudent).count();
+            case "graduate":
+                return data.stream().filter(s -> s instanceof GraduateStudent).count();
+            case "regular":
+                return data.stream().filter(s -> 
+                    !(s instanceof SpecialStudent) && !(s instanceof GraduateStudent)).count();
+            default:
+                return 0;
+        }
     }
 
-    //Hiển thị thống kê tổng hợp
     @Override
     public void showStatistics() {
         System.out.println("===== STATISTIC STUDENT =====");
@@ -46,20 +52,29 @@ public class StatisticStudent implements Statistic<Student> {
 
         Student top = getTopEntity();
         if (top != null) {
+            String type = getStudentType(top);
             System.out.println("Sinh viên có học phí cao nhất: " + top.getName() +
-                               " (" + top.getDepartment() + ") - " + top.payroll());
+                               " (" + type + ") - " + top.payroll());
         }
 
-        System.out.println("\nThống kê theo khoa:");
-        Map<String, Long> depStats = data.stream()
-                                         .collect(Collectors.groupingBy(Student::getDepartment, Collectors.counting()));
-        depStats.forEach((dep, count) ->
-                System.out.println(" - " + dep + ": " + count));
+        System.out.println("\nThống kê theo loại sinh viên:");
+        Map<String, Long> typeStats = data.stream()
+                .collect(Collectors.groupingBy(
+                    this::getStudentType,
+                    Collectors.counting()
+                ));
+        typeStats.forEach((type, count) ->
+                System.out.println(" - " + type + ": " + count));
 
-        System.out.println("==============================");
+        System.out.println("===========================");
     }
 
-    //  Trả về danh sách dữ liệu
+    private String getStudentType(Student student) {
+        if (student instanceof SpecialStudent) return "SV Đặc biệt";
+        else if (student instanceof GraduateStudent) return "SV Cao học";
+        else return "SV Thường";
+    }
+
     @Override
     public List<Student> getAllData() {
         return data;

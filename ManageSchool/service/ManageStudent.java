@@ -1,6 +1,8 @@
 package ManageSchool.service;
 
 import ManageSchool.model.Student;
+import ManageSchool.model.SpecialStudent;
+import ManageSchool.model.GraduateStudent;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,5 +47,25 @@ public class ManageStudent implements Manage<Student> {
     @Override
     public List<Student> getAll() {
         return list;
+    }
+
+    // Thêm phương thức lọc theo loại sinh viên
+    public <T extends Student> List<Student> getByType(Class<T> studentType) {
+        return list.stream()
+                .filter(studentType::isInstance)
+                .collect(Collectors.toList());
+    }
+
+    // Thống kê theo loại sinh viên
+    public Map<String, Long> getStatisticsByType() {
+        return list.stream()
+                .collect(Collectors.groupingBy(
+                    student -> {
+                        if (student instanceof SpecialStudent) return "SV Đặc biệt";
+                        else if (student instanceof GraduateStudent) return "SV Cao học";
+                        else return "SV Thường";
+                    },
+                    Collectors.counting()
+                ));
     }
 }

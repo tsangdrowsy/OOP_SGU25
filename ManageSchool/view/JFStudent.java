@@ -1,6 +1,6 @@
 package ManageSchool.view;
 
-import ManageSchool.model.Student;
+import ManageSchool.model.*;
 import ManageSchool.service.ManageStudent;
 import ManageSchool.service.StatisticStudent;
 import javax.swing.*;
@@ -22,11 +22,57 @@ public class JFStudent extends javax.swing.JFrame {
     public JFStudent() {
         initComponents();
         this.jPanel2.setBackground(Color.LIGHT_GRAY);
+        
+        // Khởi tạo các component mới
+        setupStudentTypeComboBox();
+        setupFilterTypeComboBox();
+        toggleSpecialFields("Sinh viên thường");
+        
         initTable();
         loadDataToTable();
         setButtonStates(true, false, false, false);
         clearForm();
         setupEventListeners();
+    }
+
+    private void setupStudentTypeComboBox() {
+        comboStudentType.removeAllItems();
+        comboStudentType.addItem("Sinh viên thường");
+        comboStudentType.addItem("Sinh viên đặc biệt");
+        comboStudentType.addItem("Sinh viên cao học");
+        
+        comboStudentType.addActionListener(e -> onStudentTypeChanged());
+    }
+
+    private void setupFilterTypeComboBox() {
+        comboFilterType.removeAllItems();
+        comboFilterType.addItem("Tất cả");
+        comboFilterType.addItem("Sinh viên thường");
+        comboFilterType.addItem("Sinh viên đặc biệt");
+        comboFilterType.addItem("Sinh viên cao học");
+    }
+
+    private void onStudentTypeChanged() {
+        String selectedType = (String) comboStudentType.getSelectedItem();
+        toggleSpecialFields(selectedType);
+    }
+
+    private void toggleSpecialFields(String studentType) {
+        boolean showSpecial = "Sinh viên đặc biệt".equals(studentType);
+        boolean showGraduate = "Sinh viên cao học".equals(studentType);
+
+        jLabel12.setVisible(showSpecial);
+        txtRateScholarship.setVisible(showSpecial);
+        
+        jLabel13.setVisible(showGraduate);
+        txtProjectID.setVisible(showGraduate);
+        jLabel14.setVisible(showGraduate);
+        txtProjectName.setVisible(showGraduate);
+        jLabel15.setVisible(showGraduate);
+        txtSupervisorID.setVisible(showGraduate);
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
     }
 
     private void setupEventListeners() {
@@ -39,8 +85,8 @@ public class JFStudent extends javax.swing.JFrame {
         btnSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
         btnStatistic.addActionListener(evt -> btnStatisticActionPerformed());
         btnRefresh.addActionListener(evt -> btnRefreshActionPerformed());
+        btnFilterType.addActionListener(evt -> btnFilterTypeActionPerformed());
         
-        // Enter key listener for search
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
     }
@@ -49,7 +95,7 @@ public class JFStudent extends javax.swing.JFrame {
         tableModel = (DefaultTableModel) jTable1.getModel();
         tableModel.setRowCount(0);
         
-        String[] columns = {"MSSV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Ngành", "Tín chỉ tích luỹ", "Học phí"};
+        String[] columns = {"MSSV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Ngành", "Tín chỉ", "Loại SV", "Học phí"};
         tableModel.setColumnIdentifiers(columns);
         
         jTable1.getSelectionModel().addListSelectionListener(e -> {
@@ -67,6 +113,7 @@ public class JFStudent extends javax.swing.JFrame {
         tableModel.setRowCount(0);
         
         for (Student student : students) {
+            String studentType = getStudentType(student);
             tableModel.addRow(new Object[]{
                 student.getStudentID(),
                 student.getName(),
@@ -76,9 +123,16 @@ public class JFStudent extends javax.swing.JFrame {
                 student.getFaculty(),
                 student.getMajor(),
                 student.getAccumulatedCredits(),
+                studentType,
                 String.format("%,.0f VND", student.payroll())
             });
         }
+    }
+
+    private String getStudentType(Student student) {
+        if (student instanceof SpecialStudent) return "SV Đặc biệt";
+        else if (student instanceof GraduateStudent) return "SV Cao học";
+        else return "SV Thường";
     }
 
     private void selectStudentFromTable() {
@@ -103,6 +157,20 @@ public class JFStudent extends javax.swing.JFrame {
         jTextField6.setText(student.getFaculty());
         jTextField7.setText(student.getMajor());
         jTextField8.setText(String.valueOf(student.getAccumulatedCredits()));
+
+        if (student instanceof SpecialStudent) {
+            comboStudentType.setSelectedItem("Sinh viên đặc biệt");
+            SpecialStudent special = (SpecialStudent) student;
+            txtRateScholarship.setText(String.valueOf(special.getRateScholarship()));
+        } else if (student instanceof GraduateStudent) {
+            comboStudentType.setSelectedItem("Sinh viên cao học");
+            GraduateStudent graduate = (GraduateStudent) student;
+            txtProjectID.setText(graduate.getProjectID());
+            txtProjectName.setText(graduate.getProjectName());
+            txtSupervisorID.setText(graduate.getSupervisorID());
+        } else {
+            comboStudentType.setSelectedItem("Sinh viên thường");
+        }
     }
 
     private void clearForm() {
@@ -114,9 +182,15 @@ public class JFStudent extends javax.swing.JFrame {
         jTextField6.setText("");
         jTextField7.setText("");
         jTextField8.setText("");
+        txtRateScholarship.setText("");
+        txtProjectID.setText("");
+        txtProjectName.setText("");
+        txtSupervisorID.setText("");
+        comboStudentType.setSelectedItem("Sinh viên thường");
         currentStudent = null;
         jTable1.clearSelection();
         setButtonStates(true, false, false, false);
+        toggleSpecialFields("Sinh viên thường");
     }
 
     private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled, boolean saveCancelEnabled) {
@@ -135,6 +209,11 @@ public class JFStudent extends javax.swing.JFrame {
         jTextField6.setEditable(editable);
         jTextField7.setEditable(editable);
         jTextField8.setEditable(editable);
+        txtRateScholarship.setEditable(editable);
+        txtProjectID.setEditable(editable);
+        txtProjectName.setEditable(editable);
+        txtSupervisorID.setEditable(editable);
+        comboStudentType.setEnabled(editable && !isEditing);
     }
 
     private Student getStudentFromForm() {
@@ -162,7 +241,6 @@ public class JFStudent extends javax.swing.JFrame {
                 }
             }
 
-            int age = 0;
             int credits = 0;
             if (!creditsStr.isEmpty()) {
                 try {
@@ -177,12 +255,74 @@ public class JFStudent extends javax.swing.JFrame {
                 }
             }
 
-            return new Student(name, age, citizenID, dateOfBirth, gender, studentID, faculty, major, credits);
+            String selectedType = (String) comboStudentType.getSelectedItem();
+            
+            switch (selectedType) {
+                case "Sinh viên đặc biệt":
+                    float rateScholarship = 0.0f;
+                    if (!txtRateScholarship.getText().trim().isEmpty()) {
+                        try {
+                            rateScholarship = Float.parseFloat(txtRateScholarship.getText().trim());
+                            if (rateScholarship < 0 || rateScholarship > 1) {
+                                JOptionPane.showMessageDialog(this, "Tỷ lệ học bổng phải từ 0 đến 1!");
+                                return null;
+                            }
+                        } catch (NumberFormatException e) {
+                            JOptionPane.showMessageDialog(this, "Tỷ lệ học bổng phải là số!");
+                            return null;
+                        }
+                    }
+                    return new SpecialStudent(name, 0, citizenID, dateOfBirth, gender, studentID, 
+                                            faculty, major, credits, rateScholarship);
+                    
+                case "Sinh viên cao học":
+                    String projectID = txtProjectID.getText().trim();
+                    String projectName = txtProjectName.getText().trim();
+                    String supervisorID = txtSupervisorID.getText().trim();
+                    
+                    if (projectID.isEmpty() || projectName.isEmpty() || supervisorID.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "SV cao học cần nhập đầy đủ thông tin đề tài và GV hướng dẫn!");
+                        return null;
+                    }
+                    
+                    return new GraduateStudent(name, 0, citizenID, dateOfBirth, gender, studentID, 
+                                              faculty, major, credits, projectID, projectName, supervisorID);
+                    
+                default:
+                    return new Student(name, 0, citizenID, dateOfBirth, gender, studentID, faculty, major, credits);
+            }
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
             return null;
         }
+    }
+
+    // ========== LỌC THEO LOẠI SINH VIÊN ==========
+    private void btnFilterTypeActionPerformed() {
+        String selectedType = (String) comboFilterType.getSelectedItem();
+        List<Student> filteredList;
+
+        switch (selectedType) {
+            case "Sinh viên đặc biệt":
+                filteredList = manageStudent.getByType(SpecialStudent.class);
+                break;
+            case "Sinh viên cao học":
+                filteredList = manageStudent.getByType(GraduateStudent.class);
+                break;
+            case "Sinh viên thường":
+                filteredList = manageStudent.getAll().stream()
+                        .filter(s -> !(s instanceof SpecialStudent) && !(s instanceof GraduateStudent))
+                        .collect(java.util.stream.Collectors.toList());
+                break;
+            default:
+                filteredList = manageStudent.getAll();
+                break;
+        }
+
+        loadDataToTable(filteredList);
+        JOptionPane.showMessageDialog(this, 
+            "Đã lọc " + filteredList.size() + " " + selectedType.toLowerCase());
     }
 
     // ========== CÁC PHƯƠNG THỨC XỬ LÝ SỰ KIỆN ==========
@@ -253,7 +393,6 @@ public class JFStudent extends javax.swing.JFrame {
         isEditing = false;
     }
 
-    // ========== TÌM KIẾM THEO TÊN ==========
     private void btnSearchActionPerformed() {
         String keyword = txtSearch.getText().trim();
         if (keyword.isEmpty()) {
@@ -271,7 +410,6 @@ public class JFStudent extends javax.swing.JFrame {
         }
     }
 
-    // ========== TÌM KIẾM THEO ID ==========
     private void btnSearchByIdActionPerformed() {
         String studentID = txtSearchById.getText().trim();
         if (studentID.isEmpty()) {
@@ -283,8 +421,8 @@ public class JFStudent extends javax.swing.JFrame {
         if (student == null) {
             JOptionPane.showMessageDialog(this, "Không tìm thấy sinh viên với MSSV: " + studentID);
         } else {
-            // Hiển thị sinh viên tìm được trong bảng
             tableModel.setRowCount(0);
+            String studentType = getStudentType(student);
             tableModel.addRow(new Object[]{
                 student.getStudentID(),
                 student.getName(),
@@ -294,16 +432,16 @@ public class JFStudent extends javax.swing.JFrame {
                 student.getFaculty(),
                 student.getMajor(),
                 student.getAccumulatedCredits(),
+                studentType,
                 String.format("%,.0f VND", student.payroll())
             });
             
-            // Tự động chọn và điền form
             currentStudent = student;
             fillFormWithStudent(student);
             setButtonStates(false, true, true, false);
             
             JOptionPane.showMessageDialog(this, 
-                "Đã tìm thấy sinh viên: " + student.getName());
+                "Đã tìm thấy sinh viên: " + student.getName() + " (" + studentType + ")");
         }
     }
 
@@ -321,10 +459,17 @@ public class JFStudent extends javax.swing.JFrame {
         stats.append("Tổng số sinh viên: ").append(students.size()).append("\n");
         stats.append(String.format("Học phí trung bình: %,.0f VND\n", statistic.getAverage()));
         
+        stats.append("\nThống kê theo loại:\n");
+        java.util.Map<String, Long> typeStats = manageStudent.getStatisticsByType();
+        typeStats.forEach((type, count) -> {
+            stats.append(" - ").append(type).append(": ").append(count).append(" sinh viên\n");
+        });
+
         Student topStudent = statistic.getTopEntity();
         if (topStudent != null) {
-            stats.append("Sinh viên có học phí cao nhất:\n");
-            stats.append(" - ").append(topStudent.getName()).append(" (").append(topStudent.getStudentID()).append(")\n");
+            stats.append("\nSinh viên có học phí cao nhất:\n");
+            stats.append(" - ").append(topStudent.getName()).append(" (").append(getStudentType(topStudent)).append(")\n");
+            stats.append(" - MSSV: ").append(topStudent.getStudentID()).append("\n");
             stats.append(" - Khoa: ").append(topStudent.getFaculty()).append("\n");
             stats.append(String.format(" - Học phí: %,.0f VND\n", topStudent.payroll()));
         }
@@ -399,6 +544,19 @@ public class JFStudent extends javax.swing.JFrame {
         jLabel11 = new javax.swing.JLabel();
         txtSearchById = new javax.swing.JTextField();
         btnSearchById = new javax.swing.JButton();
+        jLabel16 = new javax.swing.JLabel();
+        comboStudentType = new javax.swing.JComboBox<>();
+        jLabel12 = new javax.swing.JLabel();
+        txtRateScholarship = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        txtProjectID = new javax.swing.JTextField();
+        jLabel14 = new javax.swing.JLabel();
+        txtProjectName = new javax.swing.JTextField();
+        jLabel15 = new javax.swing.JLabel();
+        txtSupervisorID = new javax.swing.JTextField();
+        jLabel17 = new javax.swing.JLabel();
+        comboFilterType = new javax.swing.JComboBox<>();
+        btnFilterType = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -421,20 +579,20 @@ public class JFStudent extends javax.swing.JFrame {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "MSSV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Ngành", "Tín chỉ", "Học phí"
+                "MSSV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Ngành", "Tín chỉ", "Loại SV", "Học phí"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -504,6 +662,38 @@ public class JFStudent extends javax.swing.JFrame {
 
         btnSearchById.setText("Tìm theo MSSV");
 
+        jLabel16.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel16.setText("Loại sinh viên:");
+
+        comboStudentType.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel12.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel12.setText("Tỷ lệ học bổng:");
+
+        txtRateScholarship.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel13.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel13.setText("Mã đề tài:");
+
+        txtProjectID.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel14.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel14.setText("Tên đề tài:");
+
+        txtProjectName.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel15.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel15.setText("GV hướng dẫn:");
+
+        txtSupervisorID.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel17.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel17.setText("Lọc theo loại:");
+
+        comboFilterType.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        btnFilterType.setText("Lọc");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -526,6 +716,12 @@ public class JFStudent extends javax.swing.JFrame {
                                 .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(btnSearchById)
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel17)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(comboFilterType, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnFilterType)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(btnStatistic)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -565,6 +761,26 @@ public class JFStudent extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel16)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(comboStudentType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel12)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(txtRateScholarship, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel13)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(txtProjectID))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel14)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(txtProjectName))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel15)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(txtSupervisorID))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
                                         .addComponent(btnAdd1)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(btnEdit)
@@ -575,10 +791,11 @@ public class JFStudent extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(btnCancel)))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 700, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 10, Short.MAX_VALUE)))
                 .addContainerGap())
         );
+
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
@@ -592,6 +809,9 @@ public class JFStudent extends javax.swing.JFrame {
                     .addComponent(jLabel11)
                     .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnSearchById)
+                    .addComponent(jLabel17)
+                    .addComponent(comboFilterType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnFilterType)
                     .addComponent(btnStatistic)
                     .addComponent(btnRefresh))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -628,6 +848,26 @@ public class JFStudent extends javax.swing.JFrame {
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel9)
                             .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel16)
+                            .addComponent(comboStudentType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel12)
+                            .addComponent(txtRateScholarship, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel13)
+                            .addComponent(txtProjectID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel14)
+                            .addComponent(txtProjectName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel15)
+                            .addComponent(txtSupervisorID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnAdd1)
@@ -637,7 +877,7 @@ public class JFStudent extends javax.swing.JFrame {
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnSave)
                             .addComponent(btnCancel)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -668,18 +908,6 @@ public class JFStudent extends javax.swing.JFrame {
         pack();
     }// </editor-fold>                        
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
-        // TODO add your handling code here:
-    }                                           
-
-    private void jTextField4ActionPerformed(java.awt.event.ActionEvent evt) {                                            
-        // TODO add your handling code here:
-    }                                           
-
-    private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {                                            
-        // TODO add your handling code here:
-    }
-
     public static void main(String args[]) {
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -688,11 +916,13 @@ public class JFStudent extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(JFStudent.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
 
-        java.awt.EventQueue.invokeLater(() -> new JFStudent().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> {
+            new JFStudent().setVisible(true);
+        });
     }
 
     // Variables declaration - do not modify                     
@@ -700,15 +930,24 @@ public class JFStudent extends javax.swing.JFrame {
     private javax.swing.JButton btnCancel;
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnEdit;
+    private javax.swing.JButton btnFilterType;
     private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnSave;
     private javax.swing.JButton btnSearch;
     private javax.swing.JButton btnSearchById;
     private javax.swing.JButton btnStatistic;
+    private javax.swing.JComboBox<String> comboFilterType;
+    private javax.swing.JComboBox<String> comboStudentType;
     private javax.swing.JDesktopPane jDesktopPane1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel16;
+    private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -728,7 +967,11 @@ public class JFStudent extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField6;
     private javax.swing.JTextField jTextField7;
     private javax.swing.JTextField jTextField8;
+    private javax.swing.JTextField txtProjectID;
+    private javax.swing.JTextField txtProjectName;
+    private javax.swing.JTextField txtRateScholarship;
     private javax.swing.JTextField txtSearch;
     private javax.swing.JTextField txtSearchById;
+    private javax.swing.JTextField txtSupervisorID;
     // End of variables declaration                   
 }
