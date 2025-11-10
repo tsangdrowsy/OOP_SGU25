@@ -60,5 +60,5 @@ public abstract class Human {
         this.sex = sex;
     }
 
-    abstract double payroll();
+    public abstract double payroll();
 }

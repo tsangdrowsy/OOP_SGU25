@@ -11,7 +11,6 @@ public class StatisticTeacher implements Statistic<Lecturer> {
         this.data = data;
     }
 
-    // Tính trung bình lương giảng viên
     @Override
     public double getAverage() {
         if (data.isEmpty()) return 0.0;
@@ -21,7 +20,6 @@ public class StatisticTeacher implements Statistic<Lecturer> {
                    .orElse(0.0);
     }
 
-    // Tìm giảng viên có lương cao nhất
     @Override
     public Lecturer getTopEntity() {
         return data.stream()
@@ -29,7 +27,6 @@ public class StatisticTeacher implements Statistic<Lecturer> {
                    .orElse(null);
     }
 
-    //  Đếm số giảng viên theo cấp bậc (level)
     @Override
     public long countByCategory(String level) {
         return data.stream()
@@ -37,7 +34,6 @@ public class StatisticTeacher implements Statistic<Lecturer> {
                    .count();
     }
 
-    // In thống kê tổng hợp
     @Override
     public void showStatistics() {
         System.out.println("===== STATISTIC TEACHER =====");
@@ -58,7 +54,6 @@ public class StatisticTeacher implements Statistic<Lecturer> {
         System.out.println("=============================");
     }
 
-    // Trả về danh sách dữ liệu
     @Override
     public List<Lecturer> getAllData() {
         return data;
