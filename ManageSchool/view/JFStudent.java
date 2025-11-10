@@ -1,22 +1,257 @@
-
 package ManageSchool.view;
 
-import java.awt.Color;
-
-
+import ManageSchool.model.Student;
+import ManageSchool.service.ManageStudent;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 public class JFStudent extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(JFStudent.class.getName());
+    private ManageStudent manageStudent = new ManageStudent();
+    private DefaultTableModel tableModel;
+    private boolean isEditing = false;
+    private Student currentStudent = null;
 
+    // Khai báo lại các button với khởi tạo
+    private javax.swing.JButton btnAdd1 = new javax.swing.JButton();
+    private javax.swing.JButton btnCancel = new javax.swing.JButton();
+    private javax.swing.JButton btnDelete = new javax.swing.JButton();
+    private javax.swing.JButton btnEdit = new javax.swing.JButton();
+    private javax.swing.JButton btnSave = new javax.swing.JButton();
 
     public JFStudent() {
         initComponents();
         this.jPanel2.setBackground(Color.LIGHT_GRAY);
+        initTable();
+        loadDataToTable();
+        setButtonStates(true, false, false, false);
+        clearForm();
+        setupEventListeners(); // Gọi sau khi initComponents
+    }
+
+    private void setupEventListeners() {
+        btnAdd1.addActionListener(evt -> btnAddActionPerformed());
+        btnEdit.addActionListener(evt -> btnEditActionPerformed());
+        btnDelete.addActionListener(evt -> btnDeleteActionPerformed());
+        btnSave.addActionListener(evt -> btnSaveActionPerformed());
+        btnCancel.addActionListener(evt -> btnCancelActionPerformed());
+    }
+
+    private void initTable() {
+        tableModel = (DefaultTableModel) jTable1.getModel();
+        tableModel.setRowCount(0);
+        
+        String[] columns = {"MSSV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Ngành", "Tín chỉ tích luỹ"};
+        tableModel.setColumnIdentifiers(columns);
+        
+        jTable1.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && jTable1.getSelectedRow() != -1) {
+                selectStudentFromTable();
+            }
+        });
+    }
+
+    private void loadDataToTable() {
+        tableModel.setRowCount(0);
+        List<Student> students = manageStudent.getAll();
+        
+        for (Student student : students) {
+            tableModel.addRow(new Object[]{
+                student.getStudentID(),
+                student.getName(),
+                student.getCitizenID(),
+                student.getDateOfBirth(),
+                student.getGender(),
+                student.getFaculty(),
+                student.getMajor(),
+                student.getAccumulatedCredits()
+            });
+        }
+    }
+
+    private void selectStudentFromTable() {
+        int selectedRow = jTable1.getSelectedRow();
+        if (selectedRow >= 0) {
+            String studentID = tableModel.getValueAt(selectedRow, 0).toString();
+            currentStudent = manageStudent.findByID(studentID);
+            
+            if (currentStudent != null) {
+                fillFormWithStudent(currentStudent);
+                setButtonStates(false, true, true, false);
+            }
+        }
+    }
+
+    private void fillFormWithStudent(Student student) {
+        jTextField1.setText(student.getStudentID());
+        jTextField2.setText(student.getName());
+        jTextField3.setText(student.getCitizenID());
+        jTextField4.setText(student.getDateOfBirth());
+        jTextField5.setText(student.getGender());
+        jTextField6.setText(student.getFaculty());
+        jTextField7.setText(student.getMajor());
+        jTextField8.setText(String.valueOf(student.getAccumulatedCredits()));
+    }
+
+    private void clearForm() {
+        jTextField1.setText("");
+        jTextField2.setText("");
+        jTextField3.setText("");
+        jTextField4.setText("");
+        jTextField5.setText("");
+        jTextField6.setText("");
+        jTextField7.setText("");
+        jTextField8.setText("");
+        currentStudent = null;
+        jTable1.clearSelection();
+        setButtonStates(true, false, false, false);
+    }
+
+    private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled, boolean saveCancelEnabled) {
+        btnAdd1.setEnabled(addEnabled);
+        btnEdit.setEnabled(editEnabled);
+        btnDelete.setEnabled(deleteEnabled);
+        btnSave.setEnabled(saveCancelEnabled);
+        btnCancel.setEnabled(saveCancelEnabled);
+        
+        boolean editable = saveCancelEnabled;
+        jTextField1.setEditable(editable && !isEditing);
+        jTextField2.setEditable(editable);
+        jTextField3.setEditable(editable);
+        jTextField4.setEditable(editable);
+        jTextField5.setEditable(editable);
+        jTextField6.setEditable(editable);
+        jTextField7.setEditable(editable);
+        jTextField8.setEditable(editable);
+    }
+
+    private Student getStudentFromForm() {
+        try {
+            String studentID = jTextField1.getText().trim();
+            String name = jTextField2.getText().trim();
+            String citizenID = jTextField3.getText().trim();
+            String dateOfBirth = jTextField4.getText().trim();
+            String gender = jTextField5.getText().trim();
+            String faculty = jTextField6.getText().trim();
+            String major = jTextField7.getText().trim();
+            String creditsStr = jTextField8.getText().trim();
+
+            // Validation
+            if (studentID.isEmpty() || name.isEmpty() || citizenID.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "MSSV, Họ tên và CCCD không được để trống!");
+                return null;
+            }
+
+            // Validate date format (dd/MM/yyyy)
+            if (!dateOfBirth.isEmpty()) {
+                try {
+                    LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                } catch (DateTimeParseException e) {
+                    JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (dd/MM/yyyy)!");
+                    return null;
+                }
+            }
+
+            int age = 0;
+            int credits = 0;
+            if (!creditsStr.isEmpty()) {
+                try {
+                    credits = Integer.parseInt(creditsStr);
+                    if (credits < 0) {
+                        JOptionPane.showMessageDialog(this, "Tín chỉ tích lũy không được âm!");
+                        return null;
+                    }
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Tín chỉ tích lũy phải là số!");
+                    return null;
+                }
+            }
+
+            return new Student(name, age, citizenID, dateOfBirth, gender, studentID, faculty, major, credits);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void btnAddActionPerformed() {
+        clearForm();
+        isEditing = false;
+        setButtonStates(false, false, false, true);
+        jTextField1.requestFocus();
+    }
+
+    private void btnEditActionPerformed() {
+        if (currentStudent != null) {
+            isEditing = true;
+            setButtonStates(false, false, false, true);
+            jTextField2.requestFocus();
+        }
+    }
+
+    private void btnDeleteActionPerformed() {
+        if (currentStudent != null) {
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                "Bạn có chắc muốn xoá sinh viên " + currentStudent.getName() + "?",
+                "Xác nhận xoá", JOptionPane.YES_NO_OPTION);
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                manageStudent.remove(currentStudent.getStudentID());
+                loadDataToTable();
+                clearForm();
+                JOptionPane.showMessageDialog(this, "Đã xoá sinh viên thành công!");
+            }
+        }
+    }
+
+    private void btnSaveActionPerformed() {
+        Student student = getStudentFromForm();
+        if (student != null) {
+            try {
+                if (isEditing) {
+                    manageStudent.update(student);
+                    JOptionPane.showMessageDialog(this, "Cập nhật sinh viên thành công!");
+                } else {
+                    if (manageStudent.findByID(student.getStudentID()) != null) {
+                        JOptionPane.showMessageDialog(this, "MSSV đã tồn tại!");
+                        return;
+                    }
+                    manageStudent.add(student);
+                    JOptionPane.showMessageDialog(this, "Thêm sinh viên thành công!");
+                }
+                
+                loadDataToTable();
+                clearForm();
+                setButtonStates(true, false, false, false);
+                
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void btnCancelActionPerformed() {
+        if (currentStudent != null && isEditing) {
+            fillFormWithStudent(currentStudent);
+        } else {
+            clearForm();
+        }
+        setButtonStates(true, currentStudent != null, currentStudent != null, false);
+        isEditing = false;
     }
 
     @SuppressWarnings("unchecked")
     private void initComponents() {
+        // GIỮ NGUYÊN TOÀN BỘ CODE GENERATE TỰ ĐỘNG CỦA NETBEANS/FORM DESIGNER
+        // ĐỪNG THÊM ACTION LISTENER VÀO ĐÂY
 
         jDesktopPane1 = new javax.swing.JDesktopPane();
         jPanel2 = new javax.swing.JPanel();
@@ -182,7 +417,7 @@ public class JFStudent extends javax.swing.JFrame {
                                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(jTextField3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                            .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                             .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addGap(56, 56, 56)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -291,7 +526,7 @@ public class JFStudent extends javax.swing.JFrame {
         );
 
         pack();
-    }// </editor-fold>                        
+    }
 
     private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {                                            
         // TODO add your handling code here:
@@ -303,13 +538,9 @@ public class JFStudent extends javax.swing.JFrame {
 
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {                                            
         // TODO add your handling code here:
-    }                                           
+    }
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
-  
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -320,18 +551,11 @@ public class JFStudent extends javax.swing.JFrame {
         } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
             logger.log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> new JFStudent().setVisible(true));
     }
 
     // Variables declaration - do not modify                     
-    private javax.swing.JButton btnAdd1;
-    private javax.swing.JButton btnCancel;
-    private javax.swing.JButton btnDelete;
-    private javax.swing.JButton btnEdit;
-    private javax.swing.JButton btnSave;
     private javax.swing.JDesktopPane jDesktopPane1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
