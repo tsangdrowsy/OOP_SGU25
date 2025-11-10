@@ -1,9 +1,12 @@
 package ManageSchool.service;
 
-public interface Manage {
-    void add();
-    void update();
-    void delete();
-    void findID();
-    void findName();
+import java.util.List;
+
+public interface Manage<T> {
+    void add(T obj);
+    void update(T obj);
+    void remove(String id);
+    T findByID(String id);
+    List<T> findByName(String name);
+  
 }
