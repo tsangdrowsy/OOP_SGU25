@@ -1,6 +1,8 @@
 package ManageSchool.service;
 
 import ManageSchool.model.Lecturer;
+import ManageSchool.model.Student;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,7 +46,10 @@ public class ManageTeacher implements Manage<Lecturer> {
                 .collect(Collectors.toList());
     }
 
-  
+   @Override
+    public List<Lecturer> getAll() {
+        return list;
+    }
 
     
 }

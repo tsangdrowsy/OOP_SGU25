@@ -8,5 +8,5 @@ public interface Manage<T> {
     void remove(String id);
     T findByID(String id);
     List<T> findByName(String name);
-  
+    List<T> getAll();
 }
