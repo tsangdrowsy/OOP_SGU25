@@ -41,7 +41,7 @@ public class Staff extends Human {
     }
     
     @Override
-    double payroll() {
+    public double payroll() {
         return salaryCoefficient * 2340000.0 + workingDays * 100000.0;
     }
 }

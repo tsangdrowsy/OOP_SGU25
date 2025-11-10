@@ -17,7 +17,7 @@ public class MainFrame extends JFrame {
         setTitle("Hệ thống Quản lý Trường học");
         
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 1, 10, 10));
+        panel.setLayout(new GridLayout(4, 1, 10, 10)); // Đổi thành 4 hàng
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
         JLabel title = new JLabel("CHỌN CHỨC NĂNG", JLabel.CENTER);
@@ -25,6 +25,7 @@ public class MainFrame extends JFrame {
         
         JButton btnStudent = new JButton("Quản lý Sinh viên");
         JButton btnTeacher = new JButton("Quản lý Giảng viên");
+        JButton btnStaff = new JButton("Quản lý Nhân viên"); // Thêm nút mới
         
         btnStudent.addActionListener(new ActionListener() {
             @Override
@@ -40,13 +41,21 @@ public class MainFrame extends JFrame {
             }
         });
         
+        btnStaff.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openStaffManagement();
+            }
+        });
+        
         panel.add(title);
         panel.add(btnStudent);
         panel.add(btnTeacher);
+        panel.add(btnStaff); // Thêm nút vào panel
         
         setContentPane(panel);
         pack();
-        setSize(300, 200);
+        setSize(300, 250); // Tăng chiều cao để chứa thêm nút
     }
     
     private void openStudentManagement() {
@@ -58,6 +67,12 @@ public class MainFrame extends JFrame {
     private void openTeacherManagement() {
         java.awt.EventQueue.invokeLater(() -> {
             new JFLecturer().setVisible(true);
+        });
+    }
+    
+    private void openStaffManagement() {
+        java.awt.EventQueue.invokeLater(() -> {
+            new JFStaff().setVisible(true);
         });
     }
     

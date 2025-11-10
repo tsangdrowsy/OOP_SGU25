@@ -22,7 +22,7 @@ public class AdjunctProfessor extends Lecturer {
         this.mainInstitution = mainInstitution;
     } 
     @Override
-    double payroll(){
+  public  double payroll(){
         return getTeachingHours() * rateOfPay;
     }
 

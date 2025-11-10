@@ -14,7 +14,7 @@ public AdministratorLecturer(String name, int age, String humanid, String dateOf
     this.position = position;
 }
 @Override
-double payroll(){
+public double payroll(){
 return super.payroll() + super.payroll()*0.95;
 }
 }

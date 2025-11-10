@@ -19,7 +19,7 @@ public class AcademicAdvisor extends Lecturer {
     }
 
     @Override
-    double payroll() {
+   public double payroll() {
         return super.payroll() + 2000000.0;
     }
  

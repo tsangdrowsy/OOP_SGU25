@@ -39,7 +39,7 @@ public class GraduateStudent extends Student {
     }
 
     @Override
-    double payroll() {
+    public double payroll() {
         return super.payroll() + super.payroll() * 0.5;
     }
 }

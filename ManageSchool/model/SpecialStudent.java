@@ -15,7 +15,7 @@ public class SpecialStudent extends Student {
         super(name, age, humanid, dateOfBirth, sex, studentID, department, major, credits);
         this.rateScholarship = rateScholarship;
     }
-    double payroll() {
+   public double payroll() {
         return super.payroll() - super.payroll() * rateScholarship;
     }
 }
