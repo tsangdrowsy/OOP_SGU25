@@ -9,8 +9,8 @@ public class Student extends Human {
     private int credits;
     private String major;
 
-    public Student(String name, int age, String humanid, String dateOfBirth, String sex, 
-                   String studentID, String department, String major, int credits) {
+    public Student(String name, int age, String humanid, String dateOfBirth, String sex,
+            String studentID, String department, String major, int credits) {
         super(name, age, humanid, dateOfBirth, sex);
         this.studentID = studentID;
         this.department = department;
@@ -111,5 +111,10 @@ public class Student extends Human {
 
     public void setAccumulatedCredits(int accumulatedCredits) {
         setCredits(accumulatedCredits);
+    }
+
+    // Trong class Student, thêm method để format học phí
+    public String getFormattedPayroll() {
+        return String.format("%,.0f VND", payroll());
     }
 }
