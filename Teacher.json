@@ -8,7 +8,7 @@
     "department": "Cơ điện tử",
     "lecturerID": "GV001",
     "teachingHours": 18.4,
-    "level": "Tiến sĩ"
+    "level": "PhD"
   },
   {
     "name": "Vũ Văn Kiên",
@@ -19,7 +19,7 @@
     "department": "Y học",
     "lecturerID": "GV002",
     "teachingHours": 17.0,
-    "level": "Phó giáo sư",
+    "level": "associate professor",
     "advisoryClass": "Y2023A"
   },
   {
@@ -31,7 +31,7 @@
     "department": "Kinh tế",
     "lecturerID": "GV003",
     "teachingHours": 13.9,
-    "level": "Tiến sĩ",
+    "level": "PhD",
     "rateOfPay": 350000.0,
     "mainInstitution": "Đại học Quốc gia"
   },
@@ -44,7 +44,7 @@
     "department": "Kinh tế",
     "lecturerID": "GV004",
     "teachingHours": 10.3,
-    "level": "Thạc sĩ",
+    "level": "Master",
     "position": "Trưởng khoa"
   },
   {
@@ -56,7 +56,7 @@
     "department": "Quản trị kinh doanh",
     "lecturerID": "GV005",
     "teachingHours": 15.6,
-    "level": "Giáo sư",
+    "level": "professor",
     "advisoryClass": "QTKD2023"
   }
 ]
