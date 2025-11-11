@@ -68,4 +68,7 @@ public class ManageStudent implements Manage<Student> {
                     Collectors.counting()
                 ));
     }
+     public void clearAll() {
+        list.clear();
+    }
 }

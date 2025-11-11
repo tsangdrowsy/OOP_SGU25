@@ -9,11 +9,13 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JFLecturer extends javax.swing.JFrame {
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(JFLecturer.class.getName());
+
+    private static final java.util.logging.Logger logger = java.util.logging.Logger
+            .getLogger(JFLecturer.class.getName());
     private ManageTeacher manageTeacher = new ManageTeacher();
     private DefaultTableModel tableModel;
     private boolean isEditing = false;
@@ -27,7 +29,7 @@ public class JFLecturer extends javax.swing.JFrame {
         setButtonStates(true, false, false, false);
         clearForm();
         setupEventListeners();
-        hideAllAdditionalPanels(); // Ẩn tất cả panel phụ khi khởi động
+        hideAllAdditionalPanels();
     }
 
     private void setupEventListeners() {
@@ -40,11 +42,12 @@ public class JFLecturer extends javax.swing.JFrame {
         btnSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
         btnStatistic.addActionListener(evt -> btnStatisticActionPerformed());
         btnRefresh.addActionListener(evt -> btnRefreshActionPerformed());
-        
+        btnImportJson.addActionListener(evt -> btnImportJsonActionPerformed());
+
         // Enter key listener for search
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
-        
+
         // Listener cho combobox loại giảng viên
         cbLecturerType.addActionListener(evt -> showAdditionalFields());
     }
@@ -52,10 +55,11 @@ public class JFLecturer extends javax.swing.JFrame {
     private void initTable() {
         tableModel = (DefaultTableModel) jTable1.getModel();
         tableModel.setRowCount(0);
-        
-        String[] columns = {"Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Loại GV", "Thông tin thêm", "Lương"};
+
+        String[] columns = { "Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ",
+                "Loại GV", "Thông tin thêm", "Lương" };
         tableModel.setColumnIdentifiers(columns);
-        
+
         jTable1.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && jTable1.getSelectedRow() != -1) {
                 selectLecturerFromTable();
@@ -69,19 +73,19 @@ public class JFLecturer extends javax.swing.JFrame {
 
     private void loadDataToTable(List<Lecturer> lecturers) {
         tableModel.setRowCount(0);
-        
+
         for (Lecturer lecturer : lecturers) {
             String lecturerType = "";
             String additionalInfo = "";
-            
+
             if (lecturer instanceof AcademicAdvisor) {
                 lecturerType = "Cố vấn học tập";
                 additionalInfo = "Lớp: " + ((AcademicAdvisor) lecturer).getAdvisoryClass();
             } else if (lecturer instanceof AdjunctProfessor) {
                 lecturerType = "Giảng viên thỉnh giảng";
-                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s", 
-                    ((AdjunctProfessor) lecturer).getRateOfPay(),
-                    ((AdjunctProfessor) lecturer).getmainInstitution());
+                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s",
+                        ((AdjunctProfessor) lecturer).getRateOfPay(),
+                        ((AdjunctProfessor) lecturer).getmainInstitution());
             } else if (lecturer instanceof AdministratorLecturer) {
                 lecturerType = "Giảng viên quản lý";
                 additionalInfo = "Chức vụ: " + ((AdministratorLecturer) lecturer).getPosition();
@@ -89,19 +93,19 @@ public class JFLecturer extends javax.swing.JFrame {
                 lecturerType = "Giảng viên thường";
                 additionalInfo = "";
             }
-            
-            tableModel.addRow(new Object[]{
-                lecturer.getLecturerID(),
-                lecturer.getName(),
-                lecturer.getHumanid(),
-                lecturer.getDateOfBirth(),
-                lecturer.getSex(),
-                lecturer.getDepartment(),
-                lecturer.getTeachingHours(),
-                lecturer.getLevel(),
-                lecturerType,
-                additionalInfo,
-                String.format("%,.0f VND", lecturer.payroll())
+
+            tableModel.addRow(new Object[] {
+                    lecturer.getLecturerID(),
+                    lecturer.getName(),
+                    lecturer.getHumanid(),
+                    lecturer.getDateOfBirth(),
+                    lecturer.getSex(),
+                    lecturer.getDepartment(),
+                    lecturer.getTeachingHours(),
+                    lecturer.getLevel(),
+                    lecturerType,
+                    additionalInfo,
+                    String.format("%,.0f VND", lecturer.payroll())
             });
         }
     }
@@ -111,7 +115,7 @@ public class JFLecturer extends javax.swing.JFrame {
         if (selectedRow >= 0) {
             String lecturerID = tableModel.getValueAt(selectedRow, 0).toString();
             currentLecturer = manageTeacher.findByID(lecturerID);
-            
+
             if (currentLecturer != null) {
                 fillFormWithLecturer(currentLecturer);
                 setButtonStates(false, true, true, false);
@@ -128,7 +132,7 @@ public class JFLecturer extends javax.swing.JFrame {
         jTextField6.setText(lecturer.getDepartment());
         jTextField7.setText(String.valueOf(lecturer.getTeachingHours()));
         jTextField8.setText(lecturer.getLevel());
-        
+
         // Xác định và thiết lập loại giảng viên
         if (lecturer instanceof AcademicAdvisor) {
             cbLecturerType.setSelectedItem("Cố vấn học tập");
@@ -143,7 +147,7 @@ public class JFLecturer extends javax.swing.JFrame {
         } else {
             cbLecturerType.setSelectedItem("Giảng viên thường");
         }
-        
+
         showAdditionalFields();
     }
 
@@ -167,13 +171,14 @@ public class JFLecturer extends javax.swing.JFrame {
         hideAllAdditionalPanels();
     }
 
-    private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled, boolean saveCancelEnabled) {
+    private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled,
+            boolean saveCancelEnabled) {
         btnAdd1.setEnabled(addEnabled);
         btnEdit.setEnabled(editEnabled);
         btnDelete.setEnabled(deleteEnabled);
         btnSave.setEnabled(saveCancelEnabled);
         btnCancel.setEnabled(saveCancelEnabled);
-        
+
         boolean editable = saveCancelEnabled;
         jTextField1.setEditable(editable && !isEditing);
         jTextField2.setEditable(editable);
@@ -198,9 +203,9 @@ public class JFLecturer extends javax.swing.JFrame {
 
     private void showAdditionalFields() {
         hideAllAdditionalPanels();
-        
+
         String selectedType = cbLecturerType.getSelectedItem().toString();
-        switch(selectedType) {
+        switch (selectedType) {
             case "Cố vấn học tập":
                 panelAcademicAdvisor.setVisible(true);
                 break;
@@ -211,7 +216,7 @@ public class JFLecturer extends javax.swing.JFrame {
                 panelAdministrator.setVisible(true);
                 break;
         }
-        
+
         // Cập nhật layout
         revalidate();
         repaint();
@@ -258,16 +263,16 @@ public class JFLecturer extends javax.swing.JFrame {
             }
 
             // Validation cho từng loại giảng viên
-            switch(lecturerType) {
+            switch (lecturerType) {
                 case "Cố vấn học tập":
                     String advisoryClass = txtAdvisoryClass.getText().trim();
                     if (advisoryClass.isEmpty()) {
                         JOptionPane.showMessageDialog(this, "Lớp cố vấn không được để trống!");
                         return null;
                     }
-                    return new AcademicAdvisor(name, 0, humanID, dateOfBirth, sex, 
-                        department, lecturerID, teachingHours, level, advisoryClass);
-                    
+                    return new AcademicAdvisor(name, 0, humanID, dateOfBirth, sex,
+                            department, lecturerID, teachingHours, level, advisoryClass);
+
                 case "Giảng viên thỉnh giảng":
                     String rateStr = txtRateOfPay.getText().trim();
                     String mainInstitution = txtMainInstitution.getText().trim();
@@ -282,12 +287,12 @@ public class JFLecturer extends javax.swing.JFrame {
                             return null;
                         }
                         return new AdjunctProfessor(name, 0, humanID, dateOfBirth, sex,
-                            department, lecturerID, teachingHours, level, rateOfPay, mainInstitution);
+                                department, lecturerID, teachingHours, level, rateOfPay, mainInstitution);
                     } catch (NumberFormatException e) {
                         JOptionPane.showMessageDialog(this, "Tỷ lệ lương phải là số!");
                         return null;
                     }
-                    
+
                 case "Giảng viên quản lý":
                     String position = txtPosition.getText().trim();
                     if (position.isEmpty()) {
@@ -295,11 +300,11 @@ public class JFLecturer extends javax.swing.JFrame {
                         return null;
                     }
                     return new AdministratorLecturer(name, 0, humanID, dateOfBirth, sex,
-                        department, lecturerID, teachingHours, level, position);
-                    
+                            department, lecturerID, teachingHours, level, position);
+
                 default: // Giảng viên thường
                     return new Lecturer(name, 0, humanID, dateOfBirth, sex,
-                        department, lecturerID, teachingHours, level);
+                            department, lecturerID, teachingHours, level);
             }
 
         } catch (Exception e) {
@@ -326,10 +331,10 @@ public class JFLecturer extends javax.swing.JFrame {
 
     private void btnDeleteActionPerformed() {
         if (currentLecturer != null) {
-            int confirm = JOptionPane.showConfirmDialog(this, 
-                "Bạn có chắc muốn xoá giảng viên " + currentLecturer.getName() + "?",
-                "Xác nhận xoá", JOptionPane.YES_NO_OPTION);
-            
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Bạn có chắc muốn xoá giảng viên " + currentLecturer.getName() + "?",
+                    "Xác nhận xoá", JOptionPane.YES_NO_OPTION);
+
             if (confirm == JOptionPane.YES_OPTION) {
                 manageTeacher.remove(currentLecturer.getLecturerID());
                 loadDataToTable();
@@ -354,11 +359,11 @@ public class JFLecturer extends javax.swing.JFrame {
                     manageTeacher.add(lecturer);
                     JOptionPane.showMessageDialog(this, "Thêm giảng viên thành công!");
                 }
-                
+
                 loadDataToTable();
                 clearForm();
                 setButtonStates(true, false, false, false);
-                
+
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu: " + e.getMessage());
                 e.printStackTrace();
@@ -389,8 +394,8 @@ public class JFLecturer extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Không tìm thấy giảng viên với từ khóa: " + keyword);
         } else {
             loadDataToTable(searchResults);
-            JOptionPane.showMessageDialog(this, 
-                "Tìm thấy " + searchResults.size() + " giảng viên phù hợp");
+            JOptionPane.showMessageDialog(this,
+                    "Tìm thấy " + searchResults.size() + " giảng viên phù hợp");
         }
     }
 
@@ -408,18 +413,18 @@ public class JFLecturer extends javax.swing.JFrame {
         } else {
             // Hiển thị giảng viên tìm được trong bảng
             tableModel.setRowCount(0);
-            
+
             String lecturerType = "";
             String additionalInfo = "";
-            
+
             if (lecturer instanceof AcademicAdvisor) {
                 lecturerType = "Cố vấn học tập";
                 additionalInfo = "Lớp: " + ((AcademicAdvisor) lecturer).getAdvisoryClass();
             } else if (lecturer instanceof AdjunctProfessor) {
                 lecturerType = "Giảng viên thỉnh giảng";
-                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s", 
-                    ((AdjunctProfessor) lecturer).getRateOfPay(),
-                    ((AdjunctProfessor) lecturer).getmainInstitution());
+                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s",
+                        ((AdjunctProfessor) lecturer).getRateOfPay(),
+                        ((AdjunctProfessor) lecturer).getmainInstitution());
             } else if (lecturer instanceof AdministratorLecturer) {
                 lecturerType = "Giảng viên quản lý";
                 additionalInfo = "Chức vụ: " + ((AdministratorLecturer) lecturer).getPosition();
@@ -427,28 +432,28 @@ public class JFLecturer extends javax.swing.JFrame {
                 lecturerType = "Giảng viên thường";
                 additionalInfo = "";
             }
-            
-            tableModel.addRow(new Object[]{
-                lecturer.getLecturerID(),
-                lecturer.getName(),
-                lecturer.getHumanid(),
-                lecturer.getDateOfBirth(),
-                lecturer.getSex(),
-                lecturer.getDepartment(),
-                lecturer.getTeachingHours(),
-                lecturer.getLevel(),
-                lecturerType,
-                additionalInfo,
-                String.format("%,.0f VND", lecturer.payroll())
+
+            tableModel.addRow(new Object[] {
+                    lecturer.getLecturerID(),
+                    lecturer.getName(),
+                    lecturer.getHumanid(),
+                    lecturer.getDateOfBirth(),
+                    lecturer.getSex(),
+                    lecturer.getDepartment(),
+                    lecturer.getTeachingHours(),
+                    lecturer.getLevel(),
+                    lecturerType,
+                    additionalInfo,
+                    String.format("%,.0f VND", lecturer.payroll())
             });
-            
+
             // Tự động chọn và điền form
             currentLecturer = lecturer;
             fillFormWithLecturer(lecturer);
             setButtonStates(false, true, true, false);
-            
-            JOptionPane.showMessageDialog(this, 
-                "Đã tìm thấy giảng viên: " + lecturer.getName());
+
+            JOptionPane.showMessageDialog(this,
+                    "Đã tìm thấy giảng viên: " + lecturer.getName());
         }
     }
 
@@ -460,12 +465,12 @@ public class JFLecturer extends javax.swing.JFrame {
         }
 
         StatisticTeacher statistic = new StatisticTeacher(lecturers);
-        
+
         StringBuilder stats = new StringBuilder();
         stats.append("===== THỐNG KÊ GIẢNG VIÊN =====\n\n");
         stats.append("Tổng số giảng viên: ").append(lecturers.size()).append("\n");
         stats.append(String.format("Lương trung bình: %,.0f VND\n", statistic.getAverage()));
-        
+
         Lecturer topLecturer = statistic.getTopEntity();
         if (topLecturer != null) {
             stats.append("Giảng viên có lương cao nhất:\n");
@@ -474,25 +479,28 @@ public class JFLecturer extends javax.swing.JFrame {
             stats.append(" - Khoa: ").append(topLecturer.getDepartment()).append("\n");
             stats.append(String.format(" - Lương: %,.0f VND\n", topLecturer.payroll()));
         }
-        
+
         stats.append("\nThống kê theo trình độ:\n");
         java.util.Map<String, Long> levelStats = lecturers.stream()
-            .collect(java.util.stream.Collectors.groupingBy(Lecturer::getLevel, 
-                     java.util.stream.Collectors.counting()));
-        
+                .collect(java.util.stream.Collectors.groupingBy(Lecturer::getLevel,
+                        java.util.stream.Collectors.counting()));
+
         levelStats.forEach((level, count) -> {
             stats.append(" - ").append(level).append(": ").append(count).append(" giảng viên\n");
         });
 
         stats.append("\nThống kê theo loại giảng viên:\n");
         java.util.Map<String, Long> typeStats = lecturers.stream()
-            .collect(java.util.stream.Collectors.groupingBy(lec -> {
-                if (lec instanceof AcademicAdvisor) return "Cố vấn học tập";
-                if (lec instanceof AdjunctProfessor) return "Giảng viên thỉnh giảng";
-                if (lec instanceof AdministratorLecturer) return "Giảng viên quản lý";
-                return "Giảng viên thường";
-            }, java.util.stream.Collectors.counting()));
-        
+                .collect(java.util.stream.Collectors.groupingBy(lec -> {
+                    if (lec instanceof AcademicAdvisor)
+                        return "Cố vấn học tập";
+                    if (lec instanceof AdjunctProfessor)
+                        return "Giảng viên thỉnh giảng";
+                    if (lec instanceof AdministratorLecturer)
+                        return "Giảng viên quản lý";
+                    return "Giảng viên thường";
+                }, java.util.stream.Collectors.counting()));
+
         typeStats.forEach((type, count) -> {
             stats.append(" - ").append(type).append(": ").append(count).append(" giảng viên\n");
         });
@@ -500,10 +508,10 @@ public class JFLecturer extends javax.swing.JFrame {
         JTextArea textArea = new JTextArea(stats.toString());
         textArea.setEditable(false);
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        
+
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(500, 400));
-        
+
         JOptionPane.showMessageDialog(this, scrollPane, "Thống Kê Giảng Viên", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -515,13 +523,218 @@ public class JFLecturer extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, "Đã làm mới dữ liệu!");
     }
 
+    // ========== IMPORT JSON ==========
+    private void btnImportJsonActionPerformed() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Chọn file JSON để import");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON files", "json"));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                java.io.File selectedFile = fileChooser.getSelectedFile();
+                List<Lecturer> lecturers = loadLecturersFromJsonFile(selectedFile);
+
+                if (!lecturers.isEmpty()) {
+                    int option = JOptionPane.showConfirmDialog(this,
+                            "Bạn có muốn xóa dữ liệu cũ trước khi import? \nChọn 'Yes' để xóa dữ liệu cũ, 'No' để thêm vào dữ liệu hiện có.",
+                            "Xác nhận Import",
+                            JOptionPane.YES_NO_CANCEL_OPTION);
+
+                    if (option == JOptionPane.YES_OPTION) {
+                        // Xóa dữ liệu cũ và thêm mới
+                        for (Lecturer lecturer : lecturers) {
+                            manageTeacher.remove(lecturer.getLecturerID()); // Xóa nếu tồn tại
+                            manageTeacher.add(lecturer);
+                        }
+                        JOptionPane.showMessageDialog(this,
+                                "Đã import " + lecturers.size() + " giảng viên (đã xóa dữ liệu cũ)");
+                    } else if (option == JOptionPane.NO_OPTION) {
+                        // Thêm vào dữ liệu hiện có
+                        int addedCount = 0;
+                        for (Lecturer lecturer : lecturers) {
+                            if (manageTeacher.findByID(lecturer.getLecturerID()) == null) {
+                                manageTeacher.add(lecturer);
+                                addedCount++;
+                            }
+                        }
+                        JOptionPane.showMessageDialog(this,
+                                "Đã thêm " + addedCount + " giảng viên mới vào dữ liệu hiện có");
+                    }
+
+                    loadDataToTable();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không có dữ liệu giảng viên nào được tìm thấy trong file!");
+                }
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi import file JSON: " + e.getMessage(),
+                        "Lỗi Import", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<Lecturer> loadLecturersFromJsonFile(java.io.File jsonFile) {
+        List<Lecturer> lecturers = new ArrayList<>();
+
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(jsonFile))) {
+            StringBuilder jsonContent = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonContent.append(line);
+            }
+
+            lecturers = parseJsonManually(jsonContent.toString());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi đọc file: " + e.getMessage(), e);
+        }
+
+        return lecturers;
+    }
+
+    private List<Lecturer> parseJsonManually(String jsonString) {
+        List<Lecturer> lecturers = new ArrayList<>();
+
+        try {
+            // Loại bỏ khoảng trắng và xuống dòng
+            String cleanJson = jsonString.replaceAll("\\s+", "");
+
+            // Kiểm tra xem có phải mảng JSON không
+            if (!cleanJson.startsWith("[") || !cleanJson.endsWith("]")) {
+                throw new IllegalArgumentException("JSON phải là một mảng");
+            }
+
+            // Loại bỏ dấu ngoặc vuông
+            String content = cleanJson.substring(1, cleanJson.length() - 1);
+
+            // Tách các object JSON
+            List<String> jsonObjects = splitJsonObjects(content);
+
+            for (String objStr : jsonObjects) {
+                Lecturer lecturer = parseLecturerObject(objStr);
+                if (lecturer != null) {
+                    lecturers.add(lecturer);
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Lỗi parse JSON: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi parse JSON: " + e.getMessage());
+        }
+
+        return lecturers;
+    }
+
+    private List<String> splitJsonObjects(String jsonArrayContent) {
+        List<String> objects = new ArrayList<>();
+        int braceCount = 0;
+        StringBuilder currentObject = new StringBuilder();
+
+        for (char c : jsonArrayContent.toCharArray()) {
+            if (c == '{') {
+                braceCount++;
+            }
+            if (c == '}') {
+                braceCount--;
+            }
+
+            currentObject.append(c);
+
+            if (braceCount == 0 && currentObject.length() > 0) {
+                String obj = currentObject.toString().trim();
+                if (obj.startsWith("{") && obj.endsWith("}")) {
+                    objects.add(obj);
+                }
+                currentObject = new StringBuilder();
+            }
+        }
+
+        return objects;
+    }
+
+    private Lecturer parseLecturerObject(String jsonObject) {
+        try {
+            // Loại bỏ dấu ngoặc nhọn
+            String content = jsonObject.substring(1, jsonObject.length() - 1);
+
+            // Parse các trường cơ bản
+            String name = getJsonFieldValue(content, "name");
+            int age = Integer.parseInt(getJsonFieldValue(content, "age"));
+            String humanID = getJsonFieldValue(content, "humanid");
+            String dateOfBirth = getJsonFieldValue(content, "dateOfBirth");
+            String sex = getJsonFieldValue(content, "sex");
+            String department = getJsonFieldValue(content, "department");
+            String lecturerID = getJsonFieldValue(content, "lecturerID");
+            float teachingHours = Float.parseFloat(getJsonFieldValue(content, "teachingHours"));
+            String level = getJsonFieldValue(content, "level");
+
+            // Xác định loại giảng viên dựa trên các trường đặc biệt
+            if (hasJsonField(content, "advisoryClass")) {
+                String advisoryClass = getJsonFieldValue(content, "advisoryClass");
+                return new AcademicAdvisor(name, age, humanID, dateOfBirth, sex,
+                        department, lecturerID, teachingHours, level, advisoryClass);
+            }
+
+            if (hasJsonField(content, "rateOfPay")) {
+                double rateOfPay = Double.parseDouble(getJsonFieldValue(content, "rateOfPay"));
+                String mainInstitution = getJsonFieldValue(content, "mainInstitution");
+                return new AdjunctProfessor(name, age, humanID, dateOfBirth, sex,
+                        department, lecturerID, teachingHours, level, rateOfPay, mainInstitution);
+            }
+
+            if (hasJsonField(content, "position")) {
+                String position = getJsonFieldValue(content, "position");
+                return new AdministratorLecturer(name, age, humanID, dateOfBirth, sex,
+                        department, lecturerID, teachingHours, level, position);
+            }
+
+            // Mặc định là giảng viên thường
+            return new Lecturer(name, age, humanID, dateOfBirth, sex,
+                    department, lecturerID, teachingHours, level);
+
+        } catch (Exception e) {
+            System.err.println("Lỗi parse lecturer object: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private String getJsonFieldValue(String jsonContent, String fieldName) {
+        String searchStr = "\"" + fieldName + "\":";
+        int startIndex = jsonContent.indexOf(searchStr);
+        if (startIndex == -1) {
+            throw new IllegalArgumentException("Không tìm thấy field: " + fieldName);
+        }
+
+        startIndex += searchStr.length();
+        int endIndex = jsonContent.indexOf(",", startIndex);
+        if (endIndex == -1) {
+            endIndex = jsonContent.length();
+        }
+
+        String valueStr = jsonContent.substring(startIndex, endIndex).trim();
+
+        // Xử lý giá trị string (loại bỏ dấu ngoặc kép)
+        if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
+            return valueStr.substring(1, valueStr.length() - 1);
+        }
+
+        return valueStr;
+    }
+
+    private boolean hasJsonField(String jsonContent, String fieldName) {
+        return jsonContent.contains("\"" + fieldName + "\":");
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
 
         jDesktopPane1 = new javax.swing.JDesktopPane();
@@ -571,6 +784,7 @@ public class JFLecturer extends javax.swing.JFrame {
         panelAdministrator = new javax.swing.JPanel();
         jLabel16 = new javax.swing.JLabel();
         txtPosition = new javax.swing.JTextField();
+        btnImportJson = new javax.swing.JButton(); // THÊM NÚT IMPORT JSON
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Quản lý Giảng viên");
@@ -592,30 +806,34 @@ public class JFLecturer extends javax.swing.JFrame {
 
         btnRefresh.setText("Làm mới");
 
+        btnImportJson.setText("Import JSON");
+
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null, null, null}
-            },
-            new String [] {
-                "Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Loại GV", "Thông tin thêm", "Lương"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Float.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                new Object[][] {
+                        { null, null, null, null, null, null, null, null, null, null, null },
+                        { null, null, null, null, null, null, null, null, null, null, null },
+                        { null, null, null, null, null, null, null, null, null, null, null },
+                        { null, null, null, null, null, null, null, null, null, null, null }
+                },
+                new String[] {
+                        "Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ",
+                        "Loại GV", "Thông tin thêm", "Lương"
+                }) {
+            Class[] types = new Class[] {
+                    java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class,
+                    java.lang.String.class, java.lang.String.class, java.lang.Float.class, java.lang.String.class,
+                    java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false, false
+            boolean[] canEdit = new boolean[] {
+                    false, false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
+                return types[columnIndex];
             }
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
+                return canEdit[columnIndex];
             }
         });
         jScrollPane1.setViewportView(jTable1);
@@ -681,7 +899,8 @@ public class JFLecturer extends javax.swing.JFrame {
         jLabel12.setText("Loại GV:");
 
         cbLecturerType.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        cbLecturerType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Giảng viên thường", "Cố vấn học tập", "Giảng viên thỉnh giảng", "Giảng viên quản lý" }));
+        cbLecturerType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Giảng viên thường",
+                "Cố vấn học tập", "Giảng viên thỉnh giảng", "Giảng viên quản lý" }));
 
         panelAcademicAdvisor.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin cố vấn học tập"));
 
@@ -693,25 +912,28 @@ public class JFLecturer extends javax.swing.JFrame {
         javax.swing.GroupLayout panelAcademicAdvisorLayout = new javax.swing.GroupLayout(panelAcademicAdvisor);
         panelAcademicAdvisor.setLayout(panelAcademicAdvisorLayout);
         panelAcademicAdvisorLayout.setHorizontalGroup(
-            panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel13)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel13)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
         panelAcademicAdvisorLayout.setVerticalGroup(
-            panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel13)
-                    .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(panelAcademicAdvisorLayout
+                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel13)
+                                        .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
-        panelAdjunctProfessor.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin giảng viên thỉnh giảng"));
+        panelAdjunctProfessor
+                .setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin giảng viên thỉnh giảng"));
 
         jLabel14.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         jLabel14.setText("Tỷ lệ lương:");
@@ -726,29 +948,34 @@ public class JFLecturer extends javax.swing.JFrame {
         javax.swing.GroupLayout panelAdjunctProfessorLayout = new javax.swing.GroupLayout(panelAdjunctProfessor);
         panelAdjunctProfessor.setLayout(panelAdjunctProfessorLayout);
         panelAdjunctProfessorLayout.setHorizontalGroup(
-            panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel14)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jLabel15)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel14)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE, 100,
+                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel15)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
         panelAdjunctProfessorLayout.setVerticalGroup(
-            panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel14)
-                    .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel15)
-                    .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(panelAdjunctProfessorLayout
+                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel14)
+                                        .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jLabel15)
+                                        .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         panelAdministrator.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin giảng viên quản lý"));
 
@@ -760,204 +987,307 @@ public class JFLecturer extends javax.swing.JFrame {
         javax.swing.GroupLayout panelAdministratorLayout = new javax.swing.GroupLayout(panelAdministrator);
         panelAdministrator.setLayout(panelAdministratorLayout);
         panelAdministratorLayout.setHorizontalGroup(
-            panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAdministratorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel16)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAdministratorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel16)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
         panelAdministratorLayout.setVerticalGroup(
-            panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelAdministratorLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel16)
-                    .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panelAdministratorLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(panelAdministratorLayout
+                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel16)
+                                        .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jLabel10)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnSearch)
-                                .addGap(18, 18, 18)
-                                .addComponent(jLabel11)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnSearchById)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnStatistic)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnRefresh))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel2)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel3)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField2))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel4)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField3))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel7)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField4))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel5)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField5))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel6)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField6))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel8)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel9)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel12)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(cbLecturerType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                    .addComponent(panelAcademicAdvisor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(panelAdjunctProfessor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(panelAdministrator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(btnAdd1)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnEdit)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnDelete))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(btnSave)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnCancel)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 700, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 10, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                .addComponent(jLabel10)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(txtSearch,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(btnSearch)
+                                                                .addGap(18, 18, 18)
+                                                                .addComponent(jLabel11)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(txtSearchById,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 120,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(btnSearchById)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(btnStatistic)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(btnRefresh)
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(btnImportJson))
+                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                .addGroup(jPanel2Layout.createParallelGroup(
+                                                                        javax.swing.GroupLayout.Alignment.LEADING,
+                                                                        false)
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel2)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField1,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                                        150,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel3)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField2))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel4)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField3))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel7)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField4))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel5)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField5))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel6)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField6))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel8)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField7,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                                        100,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel9)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(jTextField8,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                                        100,
+                                                                                        javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(jLabel12)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(cbLecturerType, 0,
+                                                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                        Short.MAX_VALUE))
+                                                                        .addComponent(panelAcademicAdvisor,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                Short.MAX_VALUE)
+                                                                        .addComponent(panelAdjunctProfessor,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                Short.MAX_VALUE)
+                                                                        .addComponent(panelAdministrator,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                                Short.MAX_VALUE)
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(btnAdd1)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(btnEdit)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(btnDelete))
+                                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                                .addComponent(btnSave)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(btnCancel)))
+                                                                .addPreferredGap(
+                                                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                                .addComponent(jScrollPane1,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 700,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                .addGap(0, 10, Short.MAX_VALUE)))
+                                .addContainerGap()));
         jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel10)
-                    .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSearch)
-                    .addComponent(jLabel11)
-                    .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSearchById)
-                    .addComponent(btnStatistic)
-                    .addComponent(btnRefresh))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel4)
-                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel7)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel5)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel6)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel8)
-                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel9)
-                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel12)
-                            .addComponent(cbLecturerType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(panelAcademicAdvisor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(panelAdjunctProfessor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(panelAdministrator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnAdd1)
-                            .addComponent(btnEdit)
-                            .addComponent(btnDelete))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnSave)
-                            .addComponent(btnCancel)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel10)
+                                        .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(btnSearch)
+                                        .addComponent(jLabel11)
+                                        .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(btnSearchById)
+                                        .addComponent(btnStatistic)
+                                        .addComponent(btnRefresh)
+                                        .addComponent(btnImportJson)) 
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel2)
+                                                        .addComponent(jTextField1,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel3)
+                                                        .addComponent(jTextField2,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel4)
+                                                        .addComponent(jTextField3,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel7)
+                                                        .addComponent(jTextField4,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel5)
+                                                        .addComponent(jTextField5,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel6)
+                                                        .addComponent(jTextField6,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel8)
+                                                        .addComponent(jTextField7,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel9)
+                                                        .addComponent(jTextField8,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jLabel12)
+                                                        .addComponent(cbLecturerType,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(panelAcademicAdvisor,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(panelAdjunctProfessor,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(panelAdministrator,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                        javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addGap(18, 18, 18)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(btnAdd1)
+                                                        .addComponent(btnEdit)
+                                                        .addComponent(btnDelete))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(jPanel2Layout
+                                                        .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(btnSave)
+                                                        .addComponent(btnCancel)))
+                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 500,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         jDesktopPane1.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(jDesktopPane1);
         jDesktopPane1.setLayout(jDesktopPane1Layout);
         jDesktopPane1Layout.setHorizontalGroup(
-            jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
         jDesktopPane1Layout.setVerticalGroup(
-            jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jDesktopPane1)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jDesktopPane1));
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jDesktopPane1)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jDesktopPane1));
 
         pack();
-    }// </editor-fold>                        
+    }// </editor-fold>
 
     public static void main(String args[]) {
         try {
@@ -967,8 +1297,10 @@ public class JFLecturer extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(JFLecturer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(JFLecturer.class.getName()).log(java.util.logging.Level.SEVERE, null,
+                    ex);
         }
 
         java.awt.EventQueue.invokeLater(() -> {
@@ -976,7 +1308,7 @@ public class JFLecturer extends javax.swing.JFrame {
         });
     }
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify
     private javax.swing.JButton btnAdd1;
     private javax.swing.JButton btnCancel;
     private javax.swing.JButton btnDelete;
@@ -1024,5 +1356,6 @@ public class JFLecturer extends javax.swing.JFrame {
     private javax.swing.JTextField txtRateOfPay;
     private javax.swing.JTextField txtSearch;
     private javax.swing.JTextField txtSearchById;
-    // End of variables declaration                   
+    private javax.swing.JButton btnImportJson;
+    // End of variables declaration
 }

@@ -48,4 +48,7 @@ public class ManageStaff implements Manage<Staff> {
     public List<Staff> getAll() {
         return staffList;
     }
+     public void clearAll() {
+        staffList.clear();
+    }
 }

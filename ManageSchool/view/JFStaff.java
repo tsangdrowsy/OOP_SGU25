@@ -9,15 +9,17 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JFStaff extends javax.swing.JFrame {
-    
+
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(JFStaff.class.getName());
     private ManageStaff manageStaff = new ManageStaff();
     private DefaultTableModel tableModel;
     private boolean isEditing = false;
     private Staff currentStaff = null;
+    private javax.swing.JButton btnImportJson;
 
     public JFStaff() {
         initComponents();
@@ -39,8 +41,8 @@ public class JFStaff extends javax.swing.JFrame {
         btnSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
         btnStatistic.addActionListener(evt -> btnStatisticActionPerformed());
         btnRefresh.addActionListener(evt -> btnRefreshActionPerformed());
-        
-        // Enter key listener for search
+        btnImportJson.addActionListener(evt -> btnImportJsonActionPerformed());
+
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
     }
@@ -48,10 +50,11 @@ public class JFStaff extends javax.swing.JFrame {
     private void initTable() {
         tableModel = (DefaultTableModel) jTable1.getModel();
         tableModel.setRowCount(0);
-        
-        String[] columns = {"Mã NV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Chức vụ", "Số ngày làm", "Hệ số lương", "Lương"};
+
+        String[] columns = { "Mã NV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Chức vụ", "Số ngày làm",
+                "Hệ số lương", "Lương" };
         tableModel.setColumnIdentifiers(columns);
-        
+
         jTable1.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && jTable1.getSelectedRow() != -1) {
                 selectStaffFromTable();
@@ -59,24 +62,249 @@ public class JFStaff extends javax.swing.JFrame {
         });
     }
 
+    private void btnImportJsonActionPerformed() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Chọn file JSON để import");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON files", "json"));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                java.io.File selectedFile = fileChooser.getSelectedFile();
+                List<Staff> staffList = loadStaffFromJsonFile(selectedFile);
+
+                if (!staffList.isEmpty()) {
+                    int option = JOptionPane.showConfirmDialog(this,
+                            "Bạn có muốn xóa dữ liệu cũ trước khi import? \nChọn 'Yes' để xóa dữ liệu cũ, 'No' để thêm vào dữ liệu hiện có.",
+                            "Xác nhận Import",
+                            JOptionPane.YES_NO_CANCEL_OPTION);
+
+                    if (option == JOptionPane.YES_OPTION) {
+                        // Xóa dữ liệu cũ và thêm mới
+                        manageStaff.clearAll();
+                        for (Staff staff : staffList) {
+                            manageStaff.add(staff);
+                        }
+                        JOptionPane.showMessageDialog(this,
+                                "Đã import " + staffList.size() + " nhân viên (đã xóa dữ liệu cũ)");
+                    } else if (option == JOptionPane.NO_OPTION) {
+                        // Thêm vào dữ liệu hiện có
+                        int addedCount = 0;
+                        for (Staff staff : staffList) {
+                            if (manageStaff.findByID(staff.getStaffID()) == null) {
+                                manageStaff.add(staff);
+                                addedCount++;
+                            }
+                        }
+                        JOptionPane.showMessageDialog(this,
+                                "Đã thêm " + addedCount + " nhân viên mới vào dữ liệu hiện có");
+                    }
+
+                    loadDataToTable();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không có dữ liệu nhân viên nào được tìm thấy trong file!");
+                }
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi import file JSON: " + e.getMessage(),
+                        "Lỗi Import", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<Staff> loadStaffFromJsonFile(java.io.File jsonFile) {
+        List<Staff> staffList = new ArrayList<>();
+
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(jsonFile))) {
+            StringBuilder jsonContent = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonContent.append(line);
+            }
+
+            staffList = parseJsonManually(jsonContent.toString());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi đọc file: " + e.getMessage(), e);
+        }
+
+        return staffList;
+    }
+
+    private List<Staff> parseJsonManually(String jsonString) {
+        List<Staff> staffList = new ArrayList<>();
+
+        try {
+            // Loại bỏ khoảng trắng và xuống dòng
+            String cleanJson = jsonString.replaceAll("\\s+", "");
+
+            // Kiểm tra xem có phải mảng JSON không
+            if (!cleanJson.startsWith("[") || !cleanJson.endsWith("]")) {
+                throw new IllegalArgumentException("JSON phải là một mảng");
+            }
+
+            // Loại bỏ dấu ngoặc vuông
+            String content = cleanJson.substring(1, cleanJson.length() - 1);
+
+            // Tách các object JSON
+            List<String> jsonObjects = splitJsonObjects(content);
+
+            for (String objStr : jsonObjects) {
+                Staff staff = parseStaffObject(objStr);
+                if (staff != null) {
+                    staffList.add(staff);
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Lỗi parse JSON: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi parse JSON: " + e.getMessage());
+        }
+
+        return staffList;
+    }
+
+    private List<String> splitJsonObjects(String jsonArrayContent) {
+        List<String> objects = new ArrayList<>();
+        int braceCount = 0;
+        StringBuilder currentObject = new StringBuilder();
+
+        for (char c : jsonArrayContent.toCharArray()) {
+            if (c == '{') {
+                braceCount++;
+            }
+            if (c == '}') {
+                braceCount--;
+            }
+
+            currentObject.append(c);
+
+            if (braceCount == 0 && currentObject.length() > 0) {
+                String obj = currentObject.toString().trim();
+                if (obj.startsWith("{") && obj.endsWith("}")) {
+                    objects.add(obj);
+                }
+                currentObject = new StringBuilder();
+            }
+        }
+
+        return objects;
+    }
+
+  private Staff parseStaffObject(String jsonObject) {
+    try {
+        // Loại bỏ dấu ngoặc nhọn
+        String content = jsonObject.substring(1, jsonObject.length() - 1);
+        
+        System.out.println("Parsing object: " + content); // Debug
+
+        // Parse các trường - SỬA LẠI THEO ĐÚNG CẤU TRÚC JSON
+        String name = getJsonFieldValue(content, "name");
+        int age = Integer.parseInt(getJsonFieldValue(content, "age"));
+        String humanid = getJsonFieldValue(content, "humanid");
+        String dateOfBirth = getJsonFieldValue(content, "dateOfBirth");
+        String sex = getJsonFieldValue(content, "sex");
+        String position = getJsonFieldValue(content, "position"); // ĐÃ SỬA: từ "department" thành "position"
+        String staffID = getJsonFieldValue(content, "staffID");
+        
+        // Parse số thực - thêm xử lý lỗi
+        float workingDays = 0;
+        float salaryCoefficient = 0;
+        
+        try {
+            String workingDaysStr = getJsonFieldValue(content, "workingDays");
+            workingDays = Float.parseFloat(workingDaysStr);
+        } catch (Exception e) {
+            System.err.println("Lỗi parse workingDays, gán giá trị mặc định 0");
+            workingDays = 0;
+        }
+        
+        try {
+            String salaryCoefficientStr = getJsonFieldValue(content, "salaryCoefficient");
+            salaryCoefficient = Float.parseFloat(salaryCoefficientStr);
+        } catch (Exception e) {
+            System.err.println("Lỗi parse salaryCoefficient, gán giá trị mặc định 0");
+            salaryCoefficient = 0;
+        }
+
+        return new Staff(name, age, humanid, dateOfBirth, sex, staffID, position, workingDays, salaryCoefficient);
+
+    } catch (Exception e) {
+        System.err.println("Lỗi parse staff object: " + e.getMessage());
+        e.printStackTrace(); // In stack trace để debug
+        return null;
+    }
+}
+
+   private String getJsonFieldValue(String jsonContent, String fieldName) {
+    try {
+        String searchStr = "\"" + fieldName + "\":";
+        int startIndex = jsonContent.indexOf(searchStr);
+        if (startIndex == -1) {
+            System.err.println("Không tìm thấy field: " + fieldName + " trong: " + jsonContent);
+            throw new IllegalArgumentException("Không tìm thấy field: " + fieldName);
+        }
+
+        startIndex += searchStr.length();
+        
+        // Tìm vị trí kết thúc chính xác hơn
+        int endIndex = -1;
+        int braceCount = 0;
+        int bracketCount = 0;
+        
+        for (int i = startIndex; i < jsonContent.length(); i++) {
+            char c = jsonContent.charAt(i);
+            if (c == '{') braceCount++;
+            if (c == '}') braceCount--;
+            if (c == '[') bracketCount++;
+            if (c == ']') bracketCount--;
+            
+            if (braceCount == 0 && bracketCount == 0 && (c == ',' || c == '}')) {
+                endIndex = i;
+                break;
+            }
+        }
+        
+        if (endIndex == -1) {
+            endIndex = jsonContent.length();
+        }
+
+        String valueStr = jsonContent.substring(startIndex, endIndex).trim();
+        
+        System.out.println("Field " + fieldName + " value: " + valueStr); // Debug
+
+        // Xử lý giá trị string (loại bỏ dấu ngoặc kép)
+        if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
+            return valueStr.substring(1, valueStr.length() - 1);
+        }
+
+        return valueStr;
+    } catch (Exception e) {
+        System.err.println("Lỗi khi parse field '" + fieldName + "': " + e.getMessage());
+        throw e;
+    }
+}
+
     private void loadDataToTable() {
         loadDataToTable(manageStaff.getAll());
     }
 
     private void loadDataToTable(List<Staff> staffList) {
         tableModel.setRowCount(0);
-        
+
         for (Staff staff : staffList) {
-            tableModel.addRow(new Object[]{
-                staff.getStaffID(),
-                staff.getName(),
-                staff.getHumanid(),
-                staff.getDateOfBirth(),
-                staff.getSex(),
-                staff.getPosition(),
-                staff.getWorkingDays(),
-                staff.getSalaryCoefficient(),
-                String.format("%,.0f VND", staff.payroll())
+            tableModel.addRow(new Object[] {
+                    staff.getStaffID(),
+                    staff.getName(),
+                    staff.getHumanid(),
+                    staff.getDateOfBirth(),
+                    staff.getSex(),
+                    staff.getPosition(),
+                    staff.getWorkingDays(),
+                    staff.getSalaryCoefficient(),
+                    String.format("%,.0f VND", staff.payroll())
             });
         }
     }
@@ -86,7 +314,7 @@ public class JFStaff extends javax.swing.JFrame {
         if (selectedRow >= 0) {
             String staffID = tableModel.getValueAt(selectedRow, 0).toString();
             currentStaff = manageStaff.findByID(staffID);
-            
+
             if (currentStaff != null) {
                 fillFormWithStaff(currentStaff);
                 setButtonStates(false, true, true, false);
@@ -119,13 +347,14 @@ public class JFStaff extends javax.swing.JFrame {
         setButtonStates(true, false, false, false);
     }
 
-    private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled, boolean saveCancelEnabled) {
+    private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled,
+            boolean saveCancelEnabled) {
         btnAdd1.setEnabled(addEnabled);
         btnEdit.setEnabled(editEnabled);
         btnDelete.setEnabled(deleteEnabled);
         btnSave.setEnabled(saveCancelEnabled);
         btnCancel.setEnabled(saveCancelEnabled);
-        
+
         boolean editable = saveCancelEnabled;
         jTextField1.setEditable(editable && !isEditing);
         jTextField2.setEditable(editable);
@@ -216,10 +445,10 @@ public class JFStaff extends javax.swing.JFrame {
 
     private void btnDeleteActionPerformed() {
         if (currentStaff != null) {
-            int confirm = JOptionPane.showConfirmDialog(this, 
-                "Bạn có chắc muốn xoá nhân viên " + currentStaff.getName() + "?",
-                "Xác nhận xoá", JOptionPane.YES_NO_OPTION);
-            
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Bạn có chắc muốn xoá nhân viên " + currentStaff.getName() + "?",
+                    "Xác nhận xoá", JOptionPane.YES_NO_OPTION);
+
             if (confirm == JOptionPane.YES_OPTION) {
                 manageStaff.remove(currentStaff.getStaffID());
                 loadDataToTable();
@@ -244,11 +473,11 @@ public class JFStaff extends javax.swing.JFrame {
                     manageStaff.add(staff);
                     JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!");
                 }
-                
+
                 loadDataToTable();
                 clearForm();
                 setButtonStates(true, false, false, false);
-                
+
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu: " + e.getMessage());
                 e.printStackTrace();
@@ -279,8 +508,8 @@ public class JFStaff extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên với từ khóa: " + keyword);
         } else {
             loadDataToTable(searchResults);
-            JOptionPane.showMessageDialog(this, 
-                "Tìm thấy " + searchResults.size() + " nhân viên phù hợp");
+            JOptionPane.showMessageDialog(this,
+                    "Tìm thấy " + searchResults.size() + " nhân viên phù hợp");
         }
     }
 
@@ -297,24 +526,24 @@ public class JFStaff extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên với mã: " + staffID);
         } else {
             tableModel.setRowCount(0);
-            tableModel.addRow(new Object[]{
-                staff.getStaffID(),
-                staff.getName(),
-                staff.getHumanid(),
-                staff.getDateOfBirth(),
-                staff.getSex(),
-                staff.getPosition(),
-                staff.getWorkingDays(),
-                staff.getSalaryCoefficient(),
-                String.format("%,.0f VND", staff.payroll())
+            tableModel.addRow(new Object[] {
+                    staff.getStaffID(),
+                    staff.getName(),
+                    staff.getHumanid(),
+                    staff.getDateOfBirth(),
+                    staff.getSex(),
+                    staff.getPosition(),
+                    staff.getWorkingDays(),
+                    staff.getSalaryCoefficient(),
+                    String.format("%,.0f VND", staff.payroll())
             });
-            
+
             currentStaff = staff;
             fillFormWithStaff(staff);
             setButtonStates(false, true, true, false);
-            
-            JOptionPane.showMessageDialog(this, 
-                "Đã tìm thấy nhân viên: " + staff.getName());
+
+            JOptionPane.showMessageDialog(this,
+                    "Đã tìm thấy nhân viên: " + staff.getName());
         }
     }
 
@@ -326,12 +555,12 @@ public class JFStaff extends javax.swing.JFrame {
         }
 
         StatisticStaff statistic = new StatisticStaff(staffList);
-        
+
         StringBuilder stats = new StringBuilder();
         stats.append("===== THỐNG KÊ NHÂN VIÊN =====\n\n");
         stats.append("Tổng số nhân viên: ").append(staffList.size()).append("\n");
         stats.append(String.format("Lương trung bình: %,.0f VND\n", statistic.getAverage()));
-        
+
         Staff topStaff = statistic.getTopEntity();
         if (topStaff != null) {
             stats.append("Nhân viên có lương cao nhất:\n");
@@ -340,25 +569,24 @@ public class JFStaff extends javax.swing.JFrame {
             stats.append(" - Hệ số lương: ").append(topStaff.getSalaryCoefficient()).append("\n");
             stats.append(String.format(" - Lương: %,.0f VND\n", topStaff.payroll()));
         }
-        
+
         stats.append("\nThống kê theo chức vụ:\n");
         java.util.Map<String, Long> positionStats = staffList.stream()
-            .collect(java.util.stream.Collectors.groupingBy(Staff::getPosition, 
-                     java.util.stream.Collectors.counting()));
-        
+                .collect(java.util.stream.Collectors.groupingBy(Staff::getPosition,
+                        java.util.stream.Collectors.counting()));
+
         positionStats.forEach((position, count) -> {
             stats.append(" - ").append(position).append(": ").append(count).append(" nhân viên\n");
         });
 
         stats.append("\nThống kê theo hệ số lương:\n");
         java.util.Map<String, Long> coefficientStats = staffList.stream()
-            .collect(java.util.stream.Collectors.groupingBy(
-                s -> String.format("%.1f - %.1f", 
-                    Math.floor(s.getSalaryCoefficient()), 
-                    Math.floor(s.getSalaryCoefficient()) + 0.9),
-                java.util.stream.Collectors.counting()
-            ));
-        
+                .collect(java.util.stream.Collectors.groupingBy(
+                        s -> String.format("%.1f - %.1f",
+                                Math.floor(s.getSalaryCoefficient()),
+                                Math.floor(s.getSalaryCoefficient()) + 0.9),
+                        java.util.stream.Collectors.counting()));
+
         coefficientStats.forEach((range, count) -> {
             stats.append(" - ").append(range).append(": ").append(count).append(" nhân viên\n");
         });
@@ -366,10 +594,10 @@ public class JFStaff extends javax.swing.JFrame {
         JTextArea textArea = new JTextArea(stats.toString());
         textArea.setEditable(false);
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        
+
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(500, 400));
-        
+
         JOptionPane.showMessageDialog(this, scrollPane, "Thống Kê Nhân Viên", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -387,79 +615,80 @@ public class JFStaff extends javax.swing.JFrame {
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
-    private void initComponents() {
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">
+   private void initComponents() {
 
-        jDesktopPane1 = new javax.swing.JDesktopPane();
-        jPanel2 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel10 = new javax.swing.JLabel();
-        txtSearch = new javax.swing.JTextField();
-        btnSearch = new javax.swing.JButton();
-        btnStatistic = new javax.swing.JButton();
-        btnRefresh = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
-        jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
-        jTextField3 = new javax.swing.JTextField();
-        jLabel7 = new javax.swing.JLabel();
-        jTextField4 = new javax.swing.JTextField();
-        jLabel5 = new javax.swing.JLabel();
-        jTextField5 = new javax.swing.JTextField();
-        jLabel6 = new javax.swing.JLabel();
-        jTextField6 = new javax.swing.JTextField();
-        jLabel8 = new javax.swing.JLabel();
-        jTextField7 = new javax.swing.JTextField();
-        jLabel9 = new javax.swing.JLabel();
-        jTextField8 = new javax.swing.JTextField();
-        btnAdd1 = new javax.swing.JButton();
-        btnEdit = new javax.swing.JButton();
-        btnDelete = new javax.swing.JButton();
-        btnSave = new javax.swing.JButton();
-        btnCancel = new javax.swing.JButton();
-        jLabel11 = new javax.swing.JLabel();
-        txtSearchById = new javax.swing.JTextField();
-        btnSearchById = new javax.swing.JButton();
+    jDesktopPane1 = new javax.swing.JDesktopPane();
+    jPanel2 = new javax.swing.JPanel();
+    jLabel1 = new javax.swing.JLabel();
+    jLabel10 = new javax.swing.JLabel();
+    txtSearch = new javax.swing.JTextField();
+    btnSearch = new javax.swing.JButton();
+    btnStatistic = new javax.swing.JButton();
+    btnRefresh = new javax.swing.JButton();
+    jScrollPane1 = new javax.swing.JScrollPane();
+    jTable1 = new javax.swing.JTable();
+    jLabel2 = new javax.swing.JLabel();
+    jTextField1 = new javax.swing.JTextField();
+    jLabel3 = new javax.swing.JLabel();
+    jTextField2 = new javax.swing.JTextField();
+    jLabel4 = new javax.swing.JLabel();
+    jTextField3 = new javax.swing.JTextField();
+    jLabel7 = new javax.swing.JLabel();
+    jTextField4 = new javax.swing.JTextField();
+    jLabel5 = new javax.swing.JLabel();
+    jTextField5 = new javax.swing.JTextField();
+    jLabel6 = new javax.swing.JLabel();
+    jTextField6 = new javax.swing.JTextField();
+    jLabel8 = new javax.swing.JLabel();
+    jTextField7 = new javax.swing.JTextField();
+    jLabel9 = new javax.swing.JLabel();
+    jTextField8 = new javax.swing.JTextField();
+    btnAdd1 = new javax.swing.JButton();
+    btnEdit = new javax.swing.JButton();
+    btnDelete = new javax.swing.JButton();
+    btnSave = new javax.swing.JButton();
+    btnCancel = new javax.swing.JButton();
+    jLabel11 = new javax.swing.JLabel();
+    txtSearchById = new javax.swing.JTextField();
+    btnSearchById = new javax.swing.JButton();
+    btnImportJson = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Quản lý Nhân viên");
+    setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+    setTitle("Quản lý Nhân viên");
 
-        jPanel2.setBackground(new java.awt.Color(204, 204, 204));
+    jPanel2.setBackground(new java.awt.Color(204, 204, 204));
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText("CHƯƠNG TRÌNH QUẢN LÝ NHÂN VIÊN");
+    jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+    jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+    jLabel1.setText("CHƯƠNG TRÌNH QUẢN LÝ NHÂN VIÊN");
 
-        jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel10.setText("Tìm theo tên:");
+    jLabel10.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel10.setText("Tìm theo tên:");
 
-        txtSearch.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    txtSearch.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        btnSearch.setText("Tìm theo tên");
+    btnSearch.setText("Tìm theo tên");
 
-        btnStatistic.setText("Thống kê");
+    btnStatistic.setText("Thống kê");
 
-        btnRefresh.setText("Làm mới");
+    btnRefresh.setText("Làm mới");
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
+    jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object[][] {
                 {null, null, null, null, null, null, null, null, null},
                 {null, null, null, null, null, null, null, null, null},
                 {null, null, null, null, null, null, null, null, null},
                 {null, null, null, null, null, null, null, null, null}
             },
-            new String [] {
+            new String[] {
                 "Mã NV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Chức vụ", "Số ngày làm", "Hệ số lương", "Lương"
             }
         ) {
-            Class[] types = new Class [] {
+            Class[] types = new Class[] {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Float.class, java.lang.Float.class, java.lang.String.class
             };
-            boolean[] canEdit = new boolean [] {
+            boolean[] canEdit = new boolean[] {
                 false, false, false, false, false, false, false, false, false
             };
 
@@ -471,228 +700,231 @@ public class JFStaff extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jScrollPane1.setViewportView(jTable1);
+    jScrollPane1.setViewportView(jTable1);
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel2.setText("Mã NV:");
+    jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel2.setText("Mã NV:");
 
-        jTextField1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel3.setText("Họ Tên:");
+    jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel3.setText("Họ Tên:");
 
-        jTextField2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel4.setText("CCCD:");
+    jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel4.setText("CCCD:");
 
-        jTextField3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel7.setText("Ngày Sinh:");
+    jLabel7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel7.setText("Ngày Sinh:");
 
-        jTextField4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel5.setText("Giới Tính:");
+    jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel5.setText("Giới Tính:");
 
-        jTextField5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel6.setText("Chức vụ:");
+    jLabel6.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel6.setText("Chức vụ:");
 
-        jTextField6.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField6.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel8.setText("Số ngày làm:");
+    jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel8.setText("Số ngày làm:");
 
-        jTextField7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel9.setText("Hệ số lương:");
+    jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel9.setText("Hệ số lương:");
 
-        jTextField8.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jTextField8.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        btnAdd1.setText("Thêm");
+    btnAdd1.setText("Thêm");
 
-        btnEdit.setText("Sửa");
+    btnEdit.setText("Sửa");
 
-        btnDelete.setText("Xoá");
+    btnDelete.setText("Xoá");
 
-        btnSave.setText("Lưu");
+    btnSave.setText("Lưu");
 
-        btnCancel.setText("Huỷ");
+    btnCancel.setText("Huỷ");
 
-        jLabel11.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel11.setText("Tìm theo mã:");
+    jLabel11.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    jLabel11.setText("Tìm theo mã:");
 
-        txtSearchById.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+    txtSearchById.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        btnSearchById.setText("Tìm theo mã");
+    btnSearchById.setText("Tìm theo mã");
 
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jLabel10)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnSearch)
-                                .addGap(18, 18, 18)
-                                .addComponent(jLabel11)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnSearchById)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnStatistic)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnRefresh))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel2)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel3)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField2))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel4)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField3))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel7)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField4))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel5)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField5))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel6)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField6))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel8)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(jLabel9)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(btnAdd1)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnEdit)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnDelete))
-                                    .addGroup(jPanel2Layout.createSequentialGroup()
-                                        .addComponent(btnSave)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(btnCancel)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 10, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel10)
-                    .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSearch)
-                    .addComponent(jLabel11)
-                    .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSearchById)
-                    .addComponent(btnStatistic)
-                    .addComponent(btnRefresh))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel4)
-                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel7)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel5)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel6)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel8)
-                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel9)
-                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnAdd1)
-                            .addComponent(btnEdit)
-                            .addComponent(btnDelete))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnSave)
-                            .addComponent(btnCancel)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+    btnImportJson.setText("Import JSON"); // THÊM DÒNG NÀY
 
+    javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+    jPanel2.setLayout(jPanel2Layout);
+    jPanel2Layout.setHorizontalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(jPanel2Layout.createSequentialGroup()
+            .addContainerGap()
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel2Layout.createSequentialGroup()
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                            .addComponent(jLabel10)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(btnSearch)
+                            .addGap(18, 18, 18)
+                            .addComponent(jLabel11)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(btnSearchById)
+                            .addGap(18, 18, 18)
+                            .addComponent(btnStatistic)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(btnRefresh)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON VÀO ĐÂY - KẾ BÊN NÚT LÀM MỚI
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel2)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel3)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField2))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel4)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField3))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel7)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField4))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel5)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField5))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel6)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField6))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel8)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel9)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(btnAdd1)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(btnEdit)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(btnDelete))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(btnSave)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                    .addComponent(btnCancel)))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGap(0, 10, Short.MAX_VALUE)))
+            .addContainerGap())
+    );
+
+    jPanel2Layout.setVerticalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(jPanel2Layout.createSequentialGroup()
+            .addContainerGap()
+            .addComponent(jLabel1)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(jLabel10)
+                .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnSearch)
+                .addComponent(jLabel11)
+                .addComponent(txtSearchById, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnSearchById)
+                .addComponent(btnStatistic)
+                .addComponent(btnRefresh)
+                .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON VÀO ĐÂY - CÙNG HÀNG VỚI CÁC NÚT KHÁC
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createSequentialGroup()
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel2)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel3)
+                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel4)
+                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel7)
+                        .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel5)
+                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel6)
+                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel8)
+                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel9)
+                        .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGap(18, 18, 18)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(btnAdd1)
+                        .addComponent(btnEdit)
+                        .addComponent(btnDelete))
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(btnSave)
+                        .addComponent(btnCancel)))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+    );
         jDesktopPane1.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(jDesktopPane1);
         jDesktopPane1.setLayout(jDesktopPane1Layout);
         jDesktopPane1Layout.setHorizontalGroup(
-            jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
         jDesktopPane1Layout.setVerticalGroup(
-            jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jDesktopPane1)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jDesktopPane1));
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jDesktopPane1)
-        );
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jDesktopPane1));
 
         pack();
-    }// </editor-fold>                        
+    }// </editor-fold>
 
     public static void main(String args[]) {
         try {
@@ -702,7 +934,8 @@ public class JFStaff extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(JFStaff.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
 
@@ -711,7 +944,7 @@ public class JFStaff extends javax.swing.JFrame {
         });
     }
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify
     private javax.swing.JButton btnAdd1;
     private javax.swing.JButton btnCancel;
     private javax.swing.JButton btnDelete;
@@ -746,5 +979,5 @@ public class JFStaff extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField8;
     private javax.swing.JTextField txtSearch;
     private javax.swing.JTextField txtSearchById;
-    // End of variables declaration                   
+    // End of variables declaration
 }
