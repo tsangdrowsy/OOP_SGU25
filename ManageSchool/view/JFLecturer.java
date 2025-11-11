@@ -27,6 +27,7 @@ public class JFLecturer extends javax.swing.JFrame {
         setButtonStates(true, false, false, false);
         clearForm();
         setupEventListeners();
+        hideAllAdditionalPanels(); // Ẩn tất cả panel phụ khi khởi động
     }
 
     private void setupEventListeners() {
@@ -43,13 +44,16 @@ public class JFLecturer extends javax.swing.JFrame {
         // Enter key listener for search
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
+        
+        // Listener cho combobox loại giảng viên
+        cbLecturerType.addActionListener(evt -> showAdditionalFields());
     }
 
     private void initTable() {
         tableModel = (DefaultTableModel) jTable1.getModel();
         tableModel.setRowCount(0);
         
-        String[] columns = {"Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Lương"};
+        String[] columns = {"Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Loại GV", "Thông tin thêm", "Lương"};
         tableModel.setColumnIdentifiers(columns);
         
         jTable1.getSelectionModel().addListSelectionListener(e -> {
@@ -67,6 +71,25 @@ public class JFLecturer extends javax.swing.JFrame {
         tableModel.setRowCount(0);
         
         for (Lecturer lecturer : lecturers) {
+            String lecturerType = "";
+            String additionalInfo = "";
+            
+            if (lecturer instanceof AcademicAdvisor) {
+                lecturerType = "Cố vấn học tập";
+                additionalInfo = "Lớp: " + ((AcademicAdvisor) lecturer).getAdvisoryClass();
+            } else if (lecturer instanceof AdjunctProfessor) {
+                lecturerType = "Giảng viên thỉnh giảng";
+                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s", 
+                    ((AdjunctProfessor) lecturer).getRateOfPay(),
+                    ((AdjunctProfessor) lecturer).getmainInstitution());
+            } else if (lecturer instanceof AdministratorLecturer) {
+                lecturerType = "Giảng viên quản lý";
+                additionalInfo = "Chức vụ: " + ((AdministratorLecturer) lecturer).getPosition();
+            } else {
+                lecturerType = "Giảng viên thường";
+                additionalInfo = "";
+            }
+            
             tableModel.addRow(new Object[]{
                 lecturer.getLecturerID(),
                 lecturer.getName(),
@@ -76,6 +99,8 @@ public class JFLecturer extends javax.swing.JFrame {
                 lecturer.getDepartment(),
                 lecturer.getTeachingHours(),
                 lecturer.getLevel(),
+                lecturerType,
+                additionalInfo,
                 String.format("%,.0f VND", lecturer.payroll())
             });
         }
@@ -103,6 +128,23 @@ public class JFLecturer extends javax.swing.JFrame {
         jTextField6.setText(lecturer.getDepartment());
         jTextField7.setText(String.valueOf(lecturer.getTeachingHours()));
         jTextField8.setText(lecturer.getLevel());
+        
+        // Xác định và thiết lập loại giảng viên
+        if (lecturer instanceof AcademicAdvisor) {
+            cbLecturerType.setSelectedItem("Cố vấn học tập");
+            txtAdvisoryClass.setText(((AcademicAdvisor) lecturer).getAdvisoryClass());
+        } else if (lecturer instanceof AdjunctProfessor) {
+            cbLecturerType.setSelectedItem("Giảng viên thỉnh giảng");
+            txtRateOfPay.setText(String.valueOf(((AdjunctProfessor) lecturer).getRateOfPay()));
+            txtMainInstitution.setText(((AdjunctProfessor) lecturer).getmainInstitution());
+        } else if (lecturer instanceof AdministratorLecturer) {
+            cbLecturerType.setSelectedItem("Giảng viên quản lý");
+            txtPosition.setText(((AdministratorLecturer) lecturer).getPosition());
+        } else {
+            cbLecturerType.setSelectedItem("Giảng viên thường");
+        }
+        
+        showAdditionalFields();
     }
 
     private void clearForm() {
@@ -114,9 +156,15 @@ public class JFLecturer extends javax.swing.JFrame {
         jTextField6.setText("");
         jTextField7.setText("");
         jTextField8.setText("");
+        txtAdvisoryClass.setText("");
+        txtRateOfPay.setText("");
+        txtMainInstitution.setText("");
+        txtPosition.setText("");
+        cbLecturerType.setSelectedItem("Giảng viên thường");
         currentLecturer = null;
         jTable1.clearSelection();
         setButtonStates(true, false, false, false);
+        hideAllAdditionalPanels();
     }
 
     private void setButtonStates(boolean addEnabled, boolean editEnabled, boolean deleteEnabled, boolean saveCancelEnabled) {
@@ -135,6 +183,38 @@ public class JFLecturer extends javax.swing.JFrame {
         jTextField6.setEditable(editable);
         jTextField7.setEditable(editable);
         jTextField8.setEditable(editable);
+        cbLecturerType.setEnabled(editable && !isEditing);
+        txtAdvisoryClass.setEditable(editable);
+        txtRateOfPay.setEditable(editable);
+        txtMainInstitution.setEditable(editable);
+        txtPosition.setEditable(editable);
+    }
+
+    private void hideAllAdditionalPanels() {
+        panelAcademicAdvisor.setVisible(false);
+        panelAdjunctProfessor.setVisible(false);
+        panelAdministrator.setVisible(false);
+    }
+
+    private void showAdditionalFields() {
+        hideAllAdditionalPanels();
+        
+        String selectedType = cbLecturerType.getSelectedItem().toString();
+        switch(selectedType) {
+            case "Cố vấn học tập":
+                panelAcademicAdvisor.setVisible(true);
+                break;
+            case "Giảng viên thỉnh giảng":
+                panelAdjunctProfessor.setVisible(true);
+                break;
+            case "Giảng viên quản lý":
+                panelAdministrator.setVisible(true);
+                break;
+        }
+        
+        // Cập nhật layout
+        revalidate();
+        repaint();
     }
 
     private Lecturer getLecturerFromForm() {
@@ -147,6 +227,7 @@ public class JFLecturer extends javax.swing.JFrame {
             String department = jTextField6.getText().trim();
             String hoursStr = jTextField7.getText().trim();
             String level = jTextField8.getText().trim();
+            String lecturerType = cbLecturerType.getSelectedItem().toString();
 
             if (lecturerID.isEmpty() || name.isEmpty() || humanID.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Mã GV, Họ tên và CCCD không được để trống!");
@@ -176,7 +257,50 @@ public class JFLecturer extends javax.swing.JFrame {
                 }
             }
 
-            return new Lecturer(name, 0, humanID, dateOfBirth, sex, department, lecturerID, teachingHours, level);
+            // Validation cho từng loại giảng viên
+            switch(lecturerType) {
+                case "Cố vấn học tập":
+                    String advisoryClass = txtAdvisoryClass.getText().trim();
+                    if (advisoryClass.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Lớp cố vấn không được để trống!");
+                        return null;
+                    }
+                    return new AcademicAdvisor(name, 0, humanID, dateOfBirth, sex, 
+                        department, lecturerID, teachingHours, level, advisoryClass);
+                    
+                case "Giảng viên thỉnh giảng":
+                    String rateStr = txtRateOfPay.getText().trim();
+                    String mainInstitution = txtMainInstitution.getText().trim();
+                    if (rateStr.isEmpty() || mainInstitution.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Tỷ lệ lương và cơ quan chính không được để trống!");
+                        return null;
+                    }
+                    try {
+                        double rateOfPay = Double.parseDouble(rateStr);
+                        if (rateOfPay <= 0) {
+                            JOptionPane.showMessageDialog(this, "Tỷ lệ lương phải lớn hơn 0!");
+                            return null;
+                        }
+                        return new AdjunctProfessor(name, 0, humanID, dateOfBirth, sex,
+                            department, lecturerID, teachingHours, level, rateOfPay, mainInstitution);
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(this, "Tỷ lệ lương phải là số!");
+                        return null;
+                    }
+                    
+                case "Giảng viên quản lý":
+                    String position = txtPosition.getText().trim();
+                    if (position.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Chức vụ không được để trống!");
+                        return null;
+                    }
+                    return new AdministratorLecturer(name, 0, humanID, dateOfBirth, sex,
+                        department, lecturerID, teachingHours, level, position);
+                    
+                default: // Giảng viên thường
+                    return new Lecturer(name, 0, humanID, dateOfBirth, sex,
+                        department, lecturerID, teachingHours, level);
+            }
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
@@ -284,6 +408,26 @@ public class JFLecturer extends javax.swing.JFrame {
         } else {
             // Hiển thị giảng viên tìm được trong bảng
             tableModel.setRowCount(0);
+            
+            String lecturerType = "";
+            String additionalInfo = "";
+            
+            if (lecturer instanceof AcademicAdvisor) {
+                lecturerType = "Cố vấn học tập";
+                additionalInfo = "Lớp: " + ((AcademicAdvisor) lecturer).getAdvisoryClass();
+            } else if (lecturer instanceof AdjunctProfessor) {
+                lecturerType = "Giảng viên thỉnh giảng";
+                additionalInfo = String.format("Tỷ lệ: %,.0f VND/giờ - %s", 
+                    ((AdjunctProfessor) lecturer).getRateOfPay(),
+                    ((AdjunctProfessor) lecturer).getmainInstitution());
+            } else if (lecturer instanceof AdministratorLecturer) {
+                lecturerType = "Giảng viên quản lý";
+                additionalInfo = "Chức vụ: " + ((AdministratorLecturer) lecturer).getPosition();
+            } else {
+                lecturerType = "Giảng viên thường";
+                additionalInfo = "";
+            }
+            
             tableModel.addRow(new Object[]{
                 lecturer.getLecturerID(),
                 lecturer.getName(),
@@ -293,6 +437,8 @@ public class JFLecturer extends javax.swing.JFrame {
                 lecturer.getDepartment(),
                 lecturer.getTeachingHours(),
                 lecturer.getLevel(),
+                lecturerType,
+                additionalInfo,
                 String.format("%,.0f VND", lecturer.payroll())
             });
             
@@ -338,13 +484,17 @@ public class JFLecturer extends javax.swing.JFrame {
             stats.append(" - ").append(level).append(": ").append(count).append(" giảng viên\n");
         });
 
-        stats.append("\nThống kê theo khoa:\n");
-        java.util.Map<String, Long> departmentStats = lecturers.stream()
-            .collect(java.util.stream.Collectors.groupingBy(Lecturer::getDepartment, 
-                     java.util.stream.Collectors.counting()));
+        stats.append("\nThống kê theo loại giảng viên:\n");
+        java.util.Map<String, Long> typeStats = lecturers.stream()
+            .collect(java.util.stream.Collectors.groupingBy(lec -> {
+                if (lec instanceof AcademicAdvisor) return "Cố vấn học tập";
+                if (lec instanceof AdjunctProfessor) return "Giảng viên thỉnh giảng";
+                if (lec instanceof AdministratorLecturer) return "Giảng viên quản lý";
+                return "Giảng viên thường";
+            }, java.util.stream.Collectors.counting()));
         
-        departmentStats.forEach((department, count) -> {
-            stats.append(" - ").append(department).append(": ").append(count).append(" giảng viên\n");
+        typeStats.forEach((type, count) -> {
+            stats.append(" - ").append(type).append(": ").append(count).append(" giảng viên\n");
         });
 
         JTextArea textArea = new JTextArea(stats.toString());
@@ -408,6 +558,19 @@ public class JFLecturer extends javax.swing.JFrame {
         jLabel11 = new javax.swing.JLabel();
         txtSearchById = new javax.swing.JTextField();
         btnSearchById = new javax.swing.JButton();
+        jLabel12 = new javax.swing.JLabel();
+        cbLecturerType = new javax.swing.JComboBox<>();
+        panelAcademicAdvisor = new javax.swing.JPanel();
+        jLabel13 = new javax.swing.JLabel();
+        txtAdvisoryClass = new javax.swing.JTextField();
+        panelAdjunctProfessor = new javax.swing.JPanel();
+        jLabel14 = new javax.swing.JLabel();
+        txtRateOfPay = new javax.swing.JTextField();
+        jLabel15 = new javax.swing.JLabel();
+        txtMainInstitution = new javax.swing.JTextField();
+        panelAdministrator = new javax.swing.JPanel();
+        jLabel16 = new javax.swing.JLabel();
+        txtPosition = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Quản lý Giảng viên");
@@ -431,20 +594,20 @@ public class JFLecturer extends javax.swing.JFrame {
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Lương"
+                "Mã GV", "Họ Tên", "CCCD", "Ngày Sinh", "Giới Tính", "Khoa", "Số giờ dạy", "Trình độ", "Loại GV", "Thông tin thêm", "Lương"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Float.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Float.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -514,6 +677,107 @@ public class JFLecturer extends javax.swing.JFrame {
 
         btnSearchById.setText("Tìm theo mã");
 
+        jLabel12.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel12.setText("Loại GV:");
+
+        cbLecturerType.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        cbLecturerType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Giảng viên thường", "Cố vấn học tập", "Giảng viên thỉnh giảng", "Giảng viên quản lý" }));
+
+        panelAcademicAdvisor.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin cố vấn học tập"));
+
+        jLabel13.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel13.setText("Lớp cố vấn:");
+
+        txtAdvisoryClass.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        javax.swing.GroupLayout panelAcademicAdvisorLayout = new javax.swing.GroupLayout(panelAcademicAdvisor);
+        panelAcademicAdvisor.setLayout(panelAcademicAdvisorLayout);
+        panelAcademicAdvisorLayout.setHorizontalGroup(
+            panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel13)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelAcademicAdvisorLayout.setVerticalGroup(
+            panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAcademicAdvisorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelAcademicAdvisorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel13)
+                    .addComponent(txtAdvisoryClass, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        panelAdjunctProfessor.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin giảng viên thỉnh giảng"));
+
+        jLabel14.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel14.setText("Tỷ lệ lương:");
+
+        txtRateOfPay.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        jLabel15.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel15.setText("Cơ quan chính:");
+
+        txtMainInstitution.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        javax.swing.GroupLayout panelAdjunctProfessorLayout = new javax.swing.GroupLayout(panelAdjunctProfessor);
+        panelAdjunctProfessor.setLayout(panelAdjunctProfessorLayout);
+        panelAdjunctProfessorLayout.setHorizontalGroup(
+            panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel14)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel15)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelAdjunctProfessorLayout.setVerticalGroup(
+            panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAdjunctProfessorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelAdjunctProfessorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel14)
+                    .addComponent(txtRateOfPay, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel15)
+                    .addComponent(txtMainInstitution, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        panelAdministrator.setBorder(javax.swing.BorderFactory.createTitledBorder("Thông tin giảng viên quản lý"));
+
+        jLabel16.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel16.setText("Chức vụ:");
+
+        txtPosition.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+
+        javax.swing.GroupLayout panelAdministratorLayout = new javax.swing.GroupLayout(panelAdministrator);
+        panelAdministrator.setLayout(panelAdministratorLayout);
+        panelAdministratorLayout.setHorizontalGroup(
+            panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAdministratorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel16)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelAdministratorLayout.setVerticalGroup(
+            panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelAdministratorLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelAdministratorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel16)
+                    .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -575,6 +839,13 @@ public class JFLecturer extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel12)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(cbLecturerType, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addComponent(panelAcademicAdvisor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(panelAdjunctProfessor, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(panelAdministrator, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
                                         .addComponent(btnAdd1)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(btnEdit)
@@ -585,7 +856,7 @@ public class JFLecturer extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(btnCancel)))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 700, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 10, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -638,6 +909,16 @@ public class JFLecturer extends javax.swing.JFrame {
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel9)
                             .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel12)
+                            .addComponent(cbLecturerType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelAcademicAdvisor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelAdjunctProfessor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelAdministrator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnAdd1)
@@ -647,7 +928,7 @@ public class JFLecturer extends javax.swing.JFrame {
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnSave)
                             .addComponent(btnCancel)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -705,10 +986,16 @@ public class JFLecturer extends javax.swing.JFrame {
     private javax.swing.JButton btnSearch;
     private javax.swing.JButton btnSearchById;
     private javax.swing.JButton btnStatistic;
+    private javax.swing.JComboBox<String> cbLecturerType;
     private javax.swing.JDesktopPane jDesktopPane1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -728,6 +1015,13 @@ public class JFLecturer extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField6;
     private javax.swing.JTextField jTextField7;
     private javax.swing.JTextField jTextField8;
+    private javax.swing.JPanel panelAcademicAdvisor;
+    private javax.swing.JPanel panelAdjunctProfessor;
+    private javax.swing.JPanel panelAdministrator;
+    private javax.swing.JTextField txtAdvisoryClass;
+    private javax.swing.JTextField txtMainInstitution;
+    private javax.swing.JTextField txtPosition;
+    private javax.swing.JTextField txtRateOfPay;
     private javax.swing.JTextField txtSearch;
     private javax.swing.JTextField txtSearchById;
     // End of variables declaration                   
