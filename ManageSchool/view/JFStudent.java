@@ -89,6 +89,7 @@ public class JFStudent extends javax.swing.JFrame {
         btnRefresh.addActionListener(evt -> btnRefreshActionPerformed());
         btnFilterType.addActionListener(evt -> btnFilterTypeActionPerformed());
         btnImportJson.addActionListener(evt -> btnImportJsonActionPerformed());
+        btnBackToMenu.addActionListener(evt -> btnBackToMenuActionPerformed());
 
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
@@ -309,6 +310,18 @@ public class JFStudent extends javax.swing.JFrame {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void btnBackToMenuActionPerformed() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn quay lại menu chính?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            this.dispose(); // Đóng cửa sổ hiện tại
+            new MainFrame().setVisible(true); // Mở lại menu chính
         }
     }
 
@@ -772,9 +785,11 @@ public class JFStudent extends javax.swing.JFrame {
         jLabel17 = new javax.swing.JLabel();
         comboFilterType = new javax.swing.JComboBox<>();
         btnFilterType = new javax.swing.JButton();
-        btnImportJson = new javax.swing.JButton(); // ĐÃ ĐƯỢC KHAI BÁO
+        btnImportJson = new javax.swing.JButton();
+        btnBackToMenu = new javax.swing.JButton(); // THÊM NÚT BACK TO MENU
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Quản lý Sinh viên"); // THÊM TIÊU ĐỀ
 
         jPanel2.setBackground(new java.awt.Color(204, 204, 204));
 
@@ -912,7 +927,9 @@ public class JFStudent extends javax.swing.JFrame {
 
         btnFilterType.setText("Lọc");
 
-        btnImportJson.setText("Import JSON"); // ĐÃ ĐƯỢC KHỞI TẠO
+        btnImportJson.setText("Import JSON");
+
+        btnBackToMenu.setText("<< Menu"); // KHỞI TẠO NÚT BACK TO MENU
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -956,16 +973,14 @@ public class JFStudent extends javax.swing.JFrame {
                                                                 .addPreferredGap(
                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(btnFilterType)
-                                                                .addPreferredGap(
-                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addGap(18, 18, 18)
                                                                 .addComponent(btnStatistic)
                                                                 .addPreferredGap(
                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(btnRefresh)
                                                                 .addPreferredGap(
                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON
-                                                                                              // VÀO HÀNG NÀY
+                                                                .addComponent(btnImportJson))
                                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                                 .addGroup(jPanel2Layout.createParallelGroup(
                                                                         javax.swing.GroupLayout.Alignment.LEADING,
@@ -1053,7 +1068,15 @@ public class JFStudent extends javax.swing.JFrame {
                                                                                 .addComponent(btnEdit)
                                                                                 .addPreferredGap(
                                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                                .addComponent(btnDelete))
+                                                                                .addComponent(btnDelete)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(btnBackToMenu)) // THÊM
+                                                                                                              // NÚT
+                                                                                                              // BACK
+                                                                                                              // VÀO
+                                                                                                              // DÒNG
+                                                                                                              // NÀY
                                                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                                                 .addComponent(btnSave)
                                                                                 .addPreferredGap(
@@ -1091,7 +1114,7 @@ public class JFStudent extends javax.swing.JFrame {
                                         .addComponent(btnFilterType)
                                         .addComponent(btnStatistic)
                                         .addComponent(btnRefresh)
-                                        .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON VÀO HÀNG NÀY
+                                        .addComponent(btnImportJson))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(jPanel2Layout.createSequentialGroup()
@@ -1203,7 +1226,8 @@ public class JFStudent extends javax.swing.JFrame {
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(btnAdd1)
                                                         .addComponent(btnEdit)
-                                                        .addComponent(btnDelete))
+                                                        .addComponent(btnDelete)
+                                                        .addComponent(btnBackToMenu)) // THÊM NÚT BACK VÀO DÒNG NÀY
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addGroup(jPanel2Layout
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1236,7 +1260,7 @@ public class JFStudent extends javax.swing.JFrame {
                         .addComponent(jDesktopPane1));
 
         pack();
-    }// </editor-fold>
+    }
 
     public static void main(String args[]) {
         try {
@@ -1305,5 +1329,6 @@ public class JFStudent extends javax.swing.JFrame {
     private javax.swing.JTextField txtSearchById;
     private javax.swing.JTextField txtSupervisorID;
     private javax.swing.JButton btnImportJson;
+    private javax.swing.JButton btnBackToMenu;
     // End of variables declaration
 }

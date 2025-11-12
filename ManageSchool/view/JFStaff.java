@@ -42,6 +42,7 @@ public class JFStaff extends javax.swing.JFrame {
         btnStatistic.addActionListener(evt -> btnStatisticActionPerformed());
         btnRefresh.addActionListener(evt -> btnRefreshActionPerformed());
         btnImportJson.addActionListener(evt -> btnImportJsonActionPerformed());
+        btnBackToMenu.addActionListener(evt -> btnBackToMenuActionPerformed());
 
         txtSearch.addActionListener(evt -> btnSearchActionPerformed());
         txtSearchById.addActionListener(evt -> btnSearchByIdActionPerformed());
@@ -60,6 +61,18 @@ public class JFStaff extends javax.swing.JFrame {
                 selectStaffFromTable();
             }
         });
+    }
+
+    private void btnBackToMenuActionPerformed() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn quay lại menu chính?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            this.dispose(); // Đóng cửa sổ hiện tại
+            new MainFrame().setVisible(true); // Mở lại menu chính
+        }
     }
 
     private void btnImportJsonActionPerformed() {
@@ -657,6 +670,8 @@ public class JFStaff extends javax.swing.JFrame {
         txtSearchById = new javax.swing.JTextField();
         btnSearchById = new javax.swing.JButton();
         btnImportJson = new javax.swing.JButton();
+        btnBackToMenu = new javax.swing.JButton();
+        btnBackToMenu.setText("<< Menu");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Quản lý Nhân viên");
@@ -769,6 +784,7 @@ public class JFStaff extends javax.swing.JFrame {
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
+
         jPanel2Layout.setHorizontalGroup(
                 jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel2Layout.createSequentialGroup()
@@ -806,9 +822,7 @@ public class JFStaff extends javax.swing.JFrame {
                                                                 .addComponent(btnRefresh)
                                                                 .addPreferredGap(
                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON
-                                                                                              // VÀO ĐÂY - KẾ BÊN NÚT
-                                                                                              // LÀM MỚI
+                                                                .addComponent(btnImportJson))
                                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                                 .addGroup(jPanel2Layout.createParallelGroup(
                                                                         javax.swing.GroupLayout.Alignment.LEADING,
@@ -869,7 +883,10 @@ public class JFStaff extends javax.swing.JFrame {
                                                                                 .addComponent(btnEdit)
                                                                                 .addPreferredGap(
                                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                                .addComponent(btnDelete))
+                                                                                .addComponent(btnDelete)
+                                                                                .addPreferredGap(
+                                                                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                                .addComponent(btnBackToMenu)) 
                                                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                                                 .addComponent(btnSave)
                                                                                 .addPreferredGap(
@@ -883,6 +900,7 @@ public class JFStaff extends javax.swing.JFrame {
                                                 .addGap(0, 10, Short.MAX_VALUE)))
                                 .addContainerGap()));
 
+    
         jPanel2Layout.setVerticalGroup(
                 jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel2Layout.createSequentialGroup()
@@ -902,12 +920,11 @@ public class JFStaff extends javax.swing.JFrame {
                                         .addComponent(btnSearchById)
                                         .addComponent(btnStatistic)
                                         .addComponent(btnRefresh)
-                                        .addComponent(btnImportJson)) // THÊM NÚT IMPORT JSON VÀO ĐÂY - CÙNG HÀNG VỚI
-                                                                      // CÁC NÚT KHÁC
+                                        .addComponent(btnImportJson))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(jPanel2Layout.createSequentialGroup()
-                                                .addGroup(jPanel2Layout
+                                             .addGroup(jPanel2Layout
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(jLabel2)
                                                         .addComponent(jTextField1,
@@ -975,7 +992,8 @@ public class JFStaff extends javax.swing.JFrame {
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(btnAdd1)
                                                         .addComponent(btnEdit)
-                                                        .addComponent(btnDelete))
+                                                        .addComponent(btnDelete)
+                                                        .addComponent(btnBackToMenu)) // THÊM NÚT BACK VÀO ĐÂY
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addGroup(jPanel2Layout
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -984,21 +1002,17 @@ public class JFStaff extends javax.swing.JFrame {
                                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 400,
                                                 javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
-        jDesktopPane1.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
-        javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(jDesktopPane1);
-        jDesktopPane1.setLayout(jDesktopPane1Layout);
-        jDesktopPane1Layout.setHorizontalGroup(
-                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
-                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
-        jDesktopPane1Layout.setVerticalGroup(
-                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE,
-                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
+      
+    
+    jDesktopPane1.setLayer(jPanel2,javax.swing.JLayeredPane.DEFAULT_LAYER);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
+    javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(
+            jDesktopPane1);jDesktopPane1.setLayout(jDesktopPane1Layout);jDesktopPane1Layout.setHorizontalGroup(jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,javax.swing.GroupLayout.DEFAULT_SIZE,javax.swing.GroupLayout.DEFAULT_SIZE,Short.MAX_VALUE));jDesktopPane1Layout.setVerticalGroup(jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,javax.swing.GroupLayout.DEFAULT_SIZE,javax.swing.GroupLayout.DEFAULT_SIZE,Short.MAX_VALUE));
+
+    javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+
+    getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jDesktopPane1));
@@ -1062,5 +1076,6 @@ public class JFStaff extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField8;
     private javax.swing.JTextField txtSearch;
     private javax.swing.JTextField txtSearchById;
+    private javax.swing.JButton btnBackToMenu;
     // End of variables declaration
 }
