@@ -1062,7 +1062,7 @@ public class JFStudent extends javax.swing.JFrame {
                                                                 .addPreferredGap(
                                                                         javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                                 .addComponent(jScrollPane1,
-                                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 700,
+                                                                        javax.swing.GroupLayout.PREFERRED_SIZE, 1000,
                                                                         javax.swing.GroupLayout.PREFERRED_SIZE)))
                                                 .addGap(0, 10, Short.MAX_VALUE)))
                                 .addContainerGap()));
