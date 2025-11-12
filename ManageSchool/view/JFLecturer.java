@@ -476,7 +476,7 @@ public class JFLecturer extends javax.swing.JFrame {
     // ========== LỌC THEO LOẠI GIẢNG VIÊN ==========
     private void btnFilterActionPerformed() {
         String selectedType = cbFilterType.getSelectedItem().toString();
-        
+
         if ("Tất cả".equals(selectedType)) {
             loadDataToTable();
             return;
@@ -487,13 +487,13 @@ public class JFLecturer extends javax.swing.JFrame {
 
         for (Lecturer lecturer : allLecturers) {
             boolean matches = false;
-            
+
             switch (selectedType) {
                 case "Giảng viên thường":
-                    matches = (lecturer instanceof Lecturer) && 
-                             !(lecturer instanceof AcademicAdvisor) &&
-                             !(lecturer instanceof AdjunctProfessor) &&
-                             !(lecturer instanceof AdministratorLecturer);
+                    matches = (lecturer instanceof Lecturer) &&
+                            !(lecturer instanceof AcademicAdvisor) &&
+                            !(lecturer instanceof AdjunctProfessor) &&
+                            !(lecturer instanceof AdministratorLecturer);
                     break;
                 case "Cố vấn học tập":
                     matches = lecturer instanceof AcademicAdvisor;
@@ -505,7 +505,7 @@ public class JFLecturer extends javax.swing.JFrame {
                     matches = lecturer instanceof AdministratorLecturer;
                     break;
             }
-            
+
             if (matches) {
                 filteredLecturers.add(lecturer);
             }
@@ -515,8 +515,8 @@ public class JFLecturer extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Không tìm thấy giảng viên thuộc loại: " + selectedType);
         } else {
             loadDataToTable(filteredLecturers);
-            JOptionPane.showMessageDialog(this, 
-                "Tìm thấy " + filteredLecturers.size() + " giảng viên loại: " + selectedType);
+            JOptionPane.showMessageDialog(this,
+                    "Tìm thấy " + filteredLecturers.size() + " giảng viên loại: " + selectedType);
         }
     }
 
@@ -649,7 +649,9 @@ public class JFLecturer extends javax.swing.JFrame {
     private List<Lecturer> loadLecturersFromJsonFile(java.io.File jsonFile) {
         List<Lecturer> lecturers = new ArrayList<>();
 
-        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(jsonFile))) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(new java.io.FileInputStream(jsonFile),
+                        java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder jsonContent = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -798,7 +800,7 @@ public class JFLecturer extends javax.swing.JFrame {
         return jsonContent.contains("\"" + fieldName + "\":");
     }
 
-       @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
 
@@ -1399,7 +1401,6 @@ public class JFLecturer extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>
-
 
     public static void main(String args[]) {
         try {

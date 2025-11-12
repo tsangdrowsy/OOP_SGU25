@@ -1,4 +1,4 @@
-package ManageSchool.view;
+﻿package ManageSchool.view;
 
 import ManageSchool.model.*;
 import ManageSchool.service.ManageStaff;
@@ -130,7 +130,9 @@ public class JFStaff extends javax.swing.JFrame {
     private List<Staff> loadStaffFromJsonFile(java.io.File jsonFile) {
         List<Staff> staffList = new ArrayList<>();
 
-        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(jsonFile))) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(new java.io.FileInputStream(jsonFile),
+                        java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder jsonContent = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -383,68 +385,68 @@ public class JFStaff extends javax.swing.JFrame {
         jTextField8.setEditable(editable);
     }
 
-   private Staff getStaffFromForm() {
-    try {
-        String staffID = jTextField1.getText().trim();
-        String name = jTextField2.getText().trim();
-        String humanID = jTextField3.getText().trim();
-        String dateOfBirth = jTextField4.getText().trim();
-        String sex = jTextField5.getText().trim();
-        String position = jTextField6.getText().trim();
-        String daysStr = jTextField7.getText().trim();
-        String coefficientStr = jTextField8.getText().trim();
+    private Staff getStaffFromForm() {
+        try {
+            String staffID = jTextField1.getText().trim();
+            String name = jTextField2.getText().trim();
+            String humanID = jTextField3.getText().trim();
+            String dateOfBirth = jTextField4.getText().trim();
+            String sex = jTextField5.getText().trim();
+            String position = jTextField6.getText().trim();
+            String daysStr = jTextField7.getText().trim();
+            String coefficientStr = jTextField8.getText().trim();
 
-        // Kiểm tra các trường bắt buộc không được để trống
-        if (staffID.isEmpty() || name.isEmpty() || humanID.isEmpty() || position.isEmpty() || coefficientStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Mã NV, Họ tên, CCCD, Chức vụ và Hệ số lương không được để trống!");
-            return null;
-        }
-
-        // Kiểm tra định dạng ngày sinh
-        if (!dateOfBirth.isEmpty()) {
-            try {
-                LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            } catch (DateTimeParseException e) {
-                JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (dd/MM/yyyy)!");
+            // Kiểm tra các trường bắt buộc không được để trống
+            if (staffID.isEmpty() || name.isEmpty() || humanID.isEmpty() || position.isEmpty()
+                    || coefficientStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Mã NV, Họ tên, CCCD, Chức vụ và Hệ số lương không được để trống!");
                 return null;
             }
-        }
 
-        // Kiểm tra số ngày làm
-        float workingDays = 0;
-        if (!daysStr.isEmpty()) {
+            // Kiểm tra định dạng ngày sinh
+            if (!dateOfBirth.isEmpty()) {
+                try {
+                    LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                } catch (DateTimeParseException e) {
+                    JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (dd/MM/yyyy)!");
+                    return null;
+                }
+            }
+
+            // Kiểm tra số ngày làm
+            float workingDays = 0;
+            if (!daysStr.isEmpty()) {
+                try {
+                    workingDays = Float.parseFloat(daysStr);
+                    if (workingDays < 0) {
+                        JOptionPane.showMessageDialog(this, "Số ngày làm không được âm!");
+                        return null;
+                    }
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Số ngày làm phải là số!");
+                    return null;
+                }
+            }
+
+            float salaryCoefficient = 0;
             try {
-                workingDays = Float.parseFloat(daysStr);
-                if (workingDays < 0) {
-                    JOptionPane.showMessageDialog(this, "Số ngày làm không được âm!");
+                salaryCoefficient = Float.parseFloat(coefficientStr);
+                if (salaryCoefficient <= 0) {
+                    JOptionPane.showMessageDialog(this, "Hệ số lương phải lớn hơn 0!");
                     return null;
                 }
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Số ngày làm phải là số!");
+                JOptionPane.showMessageDialog(this, "Hệ số lương phải là số!");
                 return null;
             }
-        }
 
-    
-        float salaryCoefficient = 0;
-        try {
-            salaryCoefficient = Float.parseFloat(coefficientStr);
-            if (salaryCoefficient <= 0) {
-                JOptionPane.showMessageDialog(this, "Hệ số lương phải lớn hơn 0!");
-                return null;
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Hệ số lương phải là số!");
+            return new Staff(name, 0, humanID, dateOfBirth, sex, staffID, position, workingDays, salaryCoefficient);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
             return null;
         }
-
-        return new Staff(name, 0, humanID, dateOfBirth, sex, staffID, position, workingDays, salaryCoefficient);
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
-        return null;
     }
-}
 
     // ========== CÁC PHƯƠNG THỨC XỬ LÝ SỰ KIỆN ==========
     private void btnAddActionPerformed() {
@@ -888,7 +890,7 @@ public class JFStaff extends javax.swing.JFrame {
                                                                                 .addComponent(btnDelete)
                                                                                 .addPreferredGap(
                                                                                         javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                                .addComponent(btnBackToMenu)) 
+                                                                                .addComponent(btnBackToMenu))
                                                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                                                 .addComponent(btnSave)
                                                                                 .addPreferredGap(
@@ -902,7 +904,6 @@ public class JFStaff extends javax.swing.JFrame {
                                                 .addGap(0, 10, Short.MAX_VALUE)))
                                 .addContainerGap()));
 
-    
         jPanel2Layout.setVerticalGroup(
                 jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel2Layout.createSequentialGroup()
@@ -926,7 +927,7 @@ public class JFStaff extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(jPanel2Layout.createSequentialGroup()
-                                             .addGroup(jPanel2Layout
+                                                .addGroup(jPanel2Layout
                                                         .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(jLabel2)
                                                         .addComponent(jTextField1,
@@ -1005,16 +1006,21 @@ public class JFStaff extends javax.swing.JFrame {
                                                 javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
-      
-    
-    jDesktopPane1.setLayer(jPanel2,javax.swing.JLayeredPane.DEFAULT_LAYER);
+        jDesktopPane1.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
-    javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(
-            jDesktopPane1);jDesktopPane1.setLayout(jDesktopPane1Layout);jDesktopPane1Layout.setHorizontalGroup(jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,javax.swing.GroupLayout.DEFAULT_SIZE,javax.swing.GroupLayout.DEFAULT_SIZE,Short.MAX_VALUE));jDesktopPane1Layout.setVerticalGroup(jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,javax.swing.GroupLayout.DEFAULT_SIZE,javax.swing.GroupLayout.DEFAULT_SIZE,Short.MAX_VALUE));
+        javax.swing.GroupLayout jDesktopPane1Layout = new javax.swing.GroupLayout(
+                jDesktopPane1);
+        jDesktopPane1.setLayout(jDesktopPane1Layout);
+        jDesktopPane1Layout.setHorizontalGroup(
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
+        jDesktopPane1Layout.setVerticalGroup(
+                jDesktopPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jPanel2,
+                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
 
-    javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
 
-    getContentPane().setLayout(layout);
+        getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jDesktopPane1));

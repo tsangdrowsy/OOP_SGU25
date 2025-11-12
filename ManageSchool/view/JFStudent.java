@@ -584,7 +584,8 @@ public class JFStudent extends javax.swing.JFrame {
     private List<Student> loadStudentsFromJsonFile(java.io.File jsonFile) {
         List<Student> students = new ArrayList<>();
 
-        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(jsonFile))) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+        new java.io.InputStreamReader(new java.io.FileInputStream(jsonFile), java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder jsonContent = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
