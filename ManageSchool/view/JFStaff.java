@@ -383,66 +383,68 @@ public class JFStaff extends javax.swing.JFrame {
         jTextField8.setEditable(editable);
     }
 
-    private Staff getStaffFromForm() {
-        try {
-            String staffID = jTextField1.getText().trim();
-            String name = jTextField2.getText().trim();
-            String humanID = jTextField3.getText().trim();
-            String dateOfBirth = jTextField4.getText().trim();
-            String sex = jTextField5.getText().trim();
-            String position = jTextField6.getText().trim();
-            String daysStr = jTextField7.getText().trim();
-            String coefficientStr = jTextField8.getText().trim();
+   private Staff getStaffFromForm() {
+    try {
+        String staffID = jTextField1.getText().trim();
+        String name = jTextField2.getText().trim();
+        String humanID = jTextField3.getText().trim();
+        String dateOfBirth = jTextField4.getText().trim();
+        String sex = jTextField5.getText().trim();
+        String position = jTextField6.getText().trim();
+        String daysStr = jTextField7.getText().trim();
+        String coefficientStr = jTextField8.getText().trim();
 
-            if (staffID.isEmpty() || name.isEmpty() || humanID.isEmpty() || position.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Mã NV, Họ tên, CCCD và Chức vụ không được để trống!");
-                return null;
-            }
-
-            if (!dateOfBirth.isEmpty()) {
-                try {
-                    LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                } catch (DateTimeParseException e) {
-                    JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (dd/MM/yyyy)!");
-                    return null;
-                }
-            }
-
-            float workingDays = 0;
-            if (!daysStr.isEmpty()) {
-                try {
-                    workingDays = Float.parseFloat(daysStr);
-                    if (workingDays < 0) {
-                        JOptionPane.showMessageDialog(this, "Số ngày làm không được âm!");
-                        return null;
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this, "Số ngày làm phải là số!");
-                    return null;
-                }
-            }
-
-            float salaryCoefficient = 0;
-            if (!coefficientStr.isEmpty()) {
-                try {
-                    salaryCoefficient = Float.parseFloat(coefficientStr);
-                    if (salaryCoefficient <= 0) {
-                        JOptionPane.showMessageDialog(this, "Hệ số lương phải lớn hơn 0!");
-                        return null;
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this, "Hệ số lương phải là số!");
-                    return null;
-                }
-            }
-
-            return new Staff(name, 0, humanID, dateOfBirth, sex, staffID, position, workingDays, salaryCoefficient);
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
+        // Kiểm tra các trường bắt buộc không được để trống
+        if (staffID.isEmpty() || name.isEmpty() || humanID.isEmpty() || position.isEmpty() || coefficientStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Mã NV, Họ tên, CCCD, Chức vụ và Hệ số lương không được để trống!");
             return null;
         }
+
+        // Kiểm tra định dạng ngày sinh
+        if (!dateOfBirth.isEmpty()) {
+            try {
+                LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            } catch (DateTimeParseException e) {
+                JOptionPane.showMessageDialog(this, "Ngày sinh không đúng định dạng (dd/MM/yyyy)!");
+                return null;
+            }
+        }
+
+        // Kiểm tra số ngày làm
+        float workingDays = 0;
+        if (!daysStr.isEmpty()) {
+            try {
+                workingDays = Float.parseFloat(daysStr);
+                if (workingDays < 0) {
+                    JOptionPane.showMessageDialog(this, "Số ngày làm không được âm!");
+                    return null;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Số ngày làm phải là số!");
+                return null;
+            }
+        }
+
+    
+        float salaryCoefficient = 0;
+        try {
+            salaryCoefficient = Float.parseFloat(coefficientStr);
+            if (salaryCoefficient <= 0) {
+                JOptionPane.showMessageDialog(this, "Hệ số lương phải lớn hơn 0!");
+                return null;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Hệ số lương phải là số!");
+            return null;
+        }
+
+        return new Staff(name, 0, humanID, dateOfBirth, sex, staffID, position, workingDays, salaryCoefficient);
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi nhập dữ liệu: " + e.getMessage());
+        return null;
     }
+}
 
     // ========== CÁC PHƯƠNG THỨC XỬ LÝ SỰ KIỆN ==========
     private void btnAddActionPerformed() {
