@@ -61,7 +61,6 @@ public class Student extends Human {
         return 860000.0 * credits;
     }
 
-    // Helper methods để tương thích với service
     public String getCitizenID() {
         return getHumanid();
     }
@@ -113,7 +112,6 @@ public class Student extends Human {
         setCredits(accumulatedCredits);
     }
 
-    // Trong class Student, thêm method để format học phí
     public String getFormattedPayroll() {
         return String.format("%,.0f VND", payroll());
     }
